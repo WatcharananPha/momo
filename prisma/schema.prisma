@@ -1,0 +1,409 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// Momo Loyalty Platform — Prisma Schema
+// Supabase PostgreSQL 15 compatible
+// ─────────────────────────────────────────────────────────────────────────────
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+generator py {
+  provider = "prisma-client-py"
+  interface = "asyncio"
+  recursive_type_depth = 5
+  enable_experimental_decimal = true
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
+enum MembershipTier {
+  SILVER
+  GOLD
+  PLATINUM
+  DIAMOND
+}
+
+enum MembershipStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum PointTransactionType {
+  ONBOARDING
+  EARN
+  REDEEM
+  EXPIRE
+  ADJUST
+  REFERRAL
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
+// ─── Identity ────────────────────────────────────────────────────────────────
+
+model User {
+  id                String   @id @default(uuid()) @db.Uuid
+  lineUid           String?  @unique @map("line_uid")
+  displayName       String?  @map("display_name")
+  phoneNumber       String?  @map("phone_number")
+  profilePictureUrl String?  @map("profile_picture_url")
+  isGuest           Boolean  @default(false) @map("is_guest")
+  referralCode      String?  @unique @map("referral_code")
+  referredBy        String?  @db.Uuid @map("referred_by")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  membership        Membership?
+  pointBalance      UserPointBalance?
+  pointTransactions PointTransaction[]
+  notificationLogs  NotificationLog[]
+  bookings          Booking[]
+  payments          Payment[]
+  creditWallet      CreditWallet?
+  subscriptions     Subscription[]
+
+  @@map("users")
+}
+
+// ─── Maid System ─────────────────────────────────────────────────────────────
+
+enum MaidTier {
+  TRAINEE
+  PRO
+  ELITE
+  MASTER
+}
+
+enum MaidStatus {
+  PENDING
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+model Maid {
+  id                String   @id @default(uuid()) @db.Uuid
+  userId            String?  @unique @db.Uuid @map("user_id")
+  fullName          String   @map("full_name")
+  phoneNumber       String   @map("phone_number")
+  profilePictureUrl String?  @map("profile_picture_url")
+  tier              MaidTier @default(TRAINEE)
+  baseRate          Decimal  @map("base_rate") @db.Decimal(10, 2)
+  rating            Float    @default(5.0)
+  jobCompleted      Int      @default(0) @map("job_completed")
+  demographics      Json?    @default("{}")
+  skills            MaidSkill[]
+  status            MaidStatus @default(PENDING)
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  bookings          Booking[]
+  onboarding        MaidOnboarding?
+
+  @@map("maids")
+}
+
+model MaidSkill {
+  id      String @id @default(uuid()) @db.Uuid
+  maidId  String @db.Uuid @map("maid_id")
+  skill   String // Cleaning, Cooking, Ironing
+  rating  Float  @default(0.0)
+  level   Int    @default(1)
+
+  maid    Maid   @relation(fields: [maidId], references: [id])
+
+  @@unique([maidId, skill])
+  @@map("maid_skills")
+}
+
+model MaidOnboarding {
+  id           String @id @default(uuid()) @db.Uuid
+  maidId       String @unique @db.Uuid @map("maid_id")
+  testScore    Int    @map("test_score")
+  passed       Boolean @default(false)
+  documentsUrl String? @map("documents_url")
+  status       String @default("PENDING") // PENDING, REVIEWING, APPROVED, REJECTED
+
+  maid         Maid   @relation(fields: [maidId], references: [id])
+
+  @@map("maid_onboarding")
+}
+
+// ─── Membership ───────────────────────────────────────────────────────────────
+
+model Membership {
+  id        String           @id @default(uuid()) @db.Uuid
+  userId    String           @unique @db.Uuid @map("user_id")
+  tier      MembershipTier   @default(SILVER)
+  status    MembershipStatus @default(ACTIVE)
+  joinedAt  DateTime         @default(now()) @map("joined_at")
+  expiresAt DateTime?        @map("expires_at")
+
+  user      User             @relation(fields: [userId], references: [id])
+
+  @@map("memberships")
+}
+
+// ─── Credit System ───────────────────────────────────────────────────────────
+
+model CreditWallet {
+  id              String   @id @default(uuid()) @db.Uuid
+  userId          String   @unique @db.Uuid @map("user_id")
+  balance         Int      @default(0)
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  user            User     @relation(fields: [userId], references: [id])
+  transactions    CreditTransaction[]
+
+  @@map("credit_wallets")
+}
+
+model CreditTransaction {
+  id          String   @id @default(uuid()) @db.Uuid
+  walletId    String   @db.Uuid @map("wallet_id")
+  amount      Int      // Positive for top-up, negative for deduction
+  type        String   // TOP_UP, BOOKING, REFUND, EXPIRE
+  referenceId String?  @db.Uuid @map("reference_id")
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  wallet      CreditWallet @relation(fields: [walletId], references: [id])
+
+  @@map("credit_transactions")
+}
+
+model Subscription {
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String   @db.Uuid @map("user_id")
+  packageId   String   @db.Uuid @map("package_id")
+  startDate   DateTime @default(now()) @map("start_date")
+  endDate     DateTime @map("end_date")
+  status      String   @default("ACTIVE") // ACTIVE, EXPIRED, CANCELLED
+
+  user        User     @relation(fields: [userId], references: [id])
+  package     Package  @relation(fields: [packageId], references: [id])
+
+  @@map("subscriptions")
+}
+
+model Package {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String
+  price       Decimal  @db.Decimal(10, 2)
+  credits     Int
+  durationDays Int      @map("duration_days")
+  isActive    Boolean  @default(true) @map("is_active")
+
+  subscriptions Subscription[]
+
+  @@map("packages")
+}
+
+// ─── Gamification ────────────────────────────────────────────────────────────
+
+model Campaign {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String
+  description String?
+  startDate   DateTime @map("start_date")
+  endDate     DateTime @map("end_date")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  rewards     MinigameReward[]
+
+  @@map("campaigns")
+}
+
+model MinigameReward {
+  id          String   @id @default(uuid()) @db.Uuid
+  campaignId  String   @db.Uuid @map("campaign_id")
+  name        String
+  type        String   // POINT, COUPON, CREDIT
+  value       Int
+  probability Float    // e.g., 0.05 for 5%
+  stock       Int      @default(-1) // -1 for unlimited
+
+  campaign    Campaign @relation(fields: [campaignId], references: [id])
+
+  @@map("minigame_rewards")
+}
+
+// ─── Points ───────────────────────────────────────────────────────────────────
+
+model UserPointBalance {
+  id              String   @id @default(uuid()) @db.Uuid
+  userId          String   @unique @db.Uuid @map("user_id")
+  totalPoints     Int      @default(0) @map("total_points")
+  availablePoints Int      @default(0) @map("available_points")
+  lifetimePoints  Int      @default(0) @map("lifetime_points")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  user            User     @relation(fields: [userId], references: [id])
+
+  @@map("user_point_balances")
+}
+
+model PointTransaction {
+  id          String               @id @default(uuid()) @db.Uuid
+  userId      String               @db.Uuid @map("user_id")
+  type        PointTransactionType
+  amount      Int
+  source      String
+  referenceId String?              @db.Uuid @map("reference_id")
+  description String?
+  createdAt   DateTime             @default(now()) @map("created_at")
+
+  user        User                 @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([type])
+  @@index([createdAt])
+  @@map("point_transactions")
+}
+
+model PointRule {
+  id          String               @id @default(uuid()) @db.Uuid
+  ruleName    String               @unique @map("rule_name")
+  type        PointTransactionType
+  pointAmount Int                  @map("point_amount")
+  isActive    Boolean              @default(true) @map("is_active")
+  validFrom   DateTime             @default(now()) @map("valid_from")
+  validUntil  DateTime?            @map("valid_until")
+
+  @@map("point_rules")
+}
+
+// ─── Notifications ────────────────────────────────────────────────────────────
+
+model NotificationLog {
+  id         String             @id @default(uuid()) @db.Uuid
+  userId     String             @db.Uuid @map("user_id")
+  channel    String             @default("LINE") // LINE, WHATSAPP, WECHAT, SMS
+  eventType  String             @map("event_type")
+  message    String
+  status     NotificationStatus @default(PENDING)
+  retryCount Int                @default(0) @map("retry_count")
+  sentAt     DateTime?          @map("sent_at")
+  createdAt  DateTime           @default(now()) @map("created_at")
+
+  user       User               @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([status])
+  @@map("notification_logs")
+}
+
+// ─── Bookings ─────────────────────────────────────────────────────────────────
+
+enum BookingStatus {
+  PENDING
+  AUTO_MATCHING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+  NO_SHOW
+}
+
+enum BookingType {
+  CLEANING
+  COOKING
+  IRONING
+}
+
+model Booking {
+  id            String        @id @default(uuid()) @db.Uuid
+  userId        String        @db.Uuid @map("user_id")
+  maidId        String?       @db.Uuid @map("maid_id")
+  type          BookingType
+  status        BookingStatus @default(PENDING)
+  scheduledAt   DateTime      @map("scheduled_at")
+  locationName  String        @map("location_name")
+  partySize     Int           @default(1) @map("party_size") // Duration/Rooms for Cleaning
+  notes         String?
+  totalAmount   Decimal?      @map("total_amount") @db.Decimal(10, 2)
+  creditCost    Int?          @map("credit_cost")
+  rerollCount   Int           @default(0) @map("reroll_count")
+  pointsEarned  Int           @default(0) @map("points_earned")
+  referenceCode String        @unique @map("reference_code")
+  completedAt   DateTime?     @map("completed_at")
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+
+  user          User          @relation(fields: [userId], references: [id])
+  maid          Maid?         @relation(fields: [maidId], references: [id])
+  payment       Payment?
+
+  @@index([userId])
+  @@index([maidId])
+  @@index([status])
+  @@index([scheduledAt])
+  @@map("bookings")
+}
+
+// ─── Payments ─────────────────────────────────────────────────────────────────
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum PaymentProvider {
+  OMISE
+  MANUAL
+  CREDIT
+}
+
+model Payment {
+  id         String          @id @default(uuid()) @db.Uuid
+  bookingId  String          @unique @db.Uuid @map("booking_id")
+  userId     String          @db.Uuid @map("user_id")
+  amount     Decimal         @db.Decimal(10, 2)
+  currency   String          @default("THB")
+  status     PaymentStatus   @default(PENDING)
+  provider   PaymentProvider @default(OMISE)
+  chargeId   String?         @map("charge_id")
+  metadata   Json            @default("{}")
+  paidAt     DateTime?       @map("paid_at")
+  refundedAt DateTime?       @map("refunded_at")
+  createdAt  DateTime        @default(now()) @map("created_at")
+  updatedAt  DateTime        @updatedAt @map("updated_at")
+
+  booking    Booking         @relation(fields: [bookingId], references: [id])
+  user       User            @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([status])
+  @@map("payments")
+}
+
+model GuestSession {
+  guestUuid         String    @id @default(uuid()) @db.Uuid @map("guest_uuid")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  expiredAt         DateTime  @map("expired_at")
+  convertedToUserId String?   @db.Uuid @map("converted_to_user_id")
+
+  @@map("guest_sessions")
+}
+
+model TierRule {
+  id        String @id @default(uuid()) @db.Uuid
+  tierName  String @unique @map("tier_name")
+  minPoints Int    @map("min_points")
+  maxPoints Int?   @map("max_points")
+  benefits  Json   @default("{}")
+
+  @@map("tier_rules")
+}
