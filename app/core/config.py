@@ -5,8 +5,8 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "Momo Loyalty API (Python)"
     API_V1_STR: str = "/api/v1"
     PORT: int = int(os.getenv("PORT", 9090))
-    DATABASE_URL: str = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5435/momo_db")
-    JWT_SECRET: str = os.getenv("JWT_SECRET", "super-secret-key-change-me-in-production")
+    DATABASE_URL: str = os.getenv("DATABASE_URL", "")
+    JWT_SECRET: str = os.getenv("JWT_SECRET", "")
     JWT_EXPIRES_IN: str = os.getenv("JWT_EXPIRES_IN", "86400") # Changed to str to handle values like '7d' from .env
     
     # Line
