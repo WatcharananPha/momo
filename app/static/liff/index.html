@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Momo — Home Care</title>
+    <!-- 1. CRITICAL CSS: Prevent White Screen immediately -->
+    <style>
+        :root { --brand: #046c4e; --bg: #f4f7f6; }
+        body { background-color: var(--bg); margin: 0; padding: 0; font-family: sans-serif; }
+        #loading { position: fixed; inset: 0; background: var(--brand); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; }
+        .spinner { width: 40px; height: 40px; border: 3px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .hidden { display: none !important; }
+        #app-content { opacity: 0; transition: opacity 0.5s ease; }
+        #app-content.visible { opacity: 1; }
+    </style>
+    
+    <!-- 2. EXTERNAL ASSETS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <link rel="stylesheet" href="/static/liff/css/style.css?v=1.0.6">
+    <script src="/static/liff/js/i18n.js?v=1.0.2"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['"Inter"', 'sans-serif'] },
+                    colors: {
+                        brand: { DEFAULT: '#046c4e', light: '#059669', dark: '#034a36', surface: '#eefcf6' },
+                        ink: { DEFAULT: '#111827', muted: '#6b7280', light: '#9ca3af' },
+                        bg: '#f4f7f6'
+                    }
+                }
+            }
+        }
+        
+        // Emergency Timer: If app doesn't load in 8s, force show
+        window.emergencyTimer = setTimeout(function() {
+            var loader = document.getElementById('loading');
+            if (loader && loader.style.display !== 'none') {
+                console.warn("Recovery: App taking too long, forcing view...");
+                if (typeof hideLoading === 'function') hideLoading();
+                else {
+                    loader.style.display = 'none';
+                    document.getElementById('app-content').classList.add('visible');
+                    document.getElementById('app-content').style.opacity = '1';
+                }
+            }
+        }, 8000);
+    </script>
+</head>
+<body>
+
+<div id="app-container">
+    <div id="loading">
+        <div class="spinner"></div>
+        <div style="font-weight:bold; letter-spacing:0.1em; text-transform:uppercase; font-size:0.875rem; margin-top:1rem;">Momo</div>
+    </div>
+
+    <!-- Intro Page for Guests -->
+    <div id="intro-page" class="hidden" style="position:absolute; inset:0; background:#fff; z-index:60; flex-direction:column;">
+        <div class="flex-1 relative">
+            <img src="https://images.unsplash.com/photo-1581578731548-c64695ce6958?auto=format&fit=crop&q=80&w=800" class="w-full h-full object-cover" alt="Hero">
+            <div class="absolute inset-0 bg-gradient-to-t from-white via-white/20 to-transparent"></div>
+        </div>
+        <div class="px-8 pb-12 bg-white text-center">
+            <h2 class="font-extrabold text-[32px] text-ink leading-tight mb-4 tracking-tight" data-i18n="intro_title">Happiness Starts with a Clean Space</h2>
+            <p class="text-ink-muted text-[15px] mb-10 leading-relaxed px-4" data-i18n="intro_desc">Happiness truly starts with a clean space where you can relax, breathe easily, and feel at peace.</p>
+            <button onclick="handleGetStarted()" class="w-full bg-brand text-white font-bold py-5 rounded-[18px] shadow-xl shadow-brand/20 btn-press" data-i18n="get_started">
+                Get Started
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div id="app-content" class="h-full w-full overflow-y-auto pb-[120px]">
+        <div class="h-[env(safe-area-inset-top,0px)]"></div>
+
+        <header class="px-6 pt-10 pb-2 flex justify-between items-center">
+            <div>
+                <p class="text-[13px] font-medium text-ink-muted mb-0.5" id="user-greeting" data-i18n="greeting_hello">Hello,</p>
+                <h1 class="font-extrabold text-[22px] text-ink leading-none tracking-tight" id="user-name" data-i18n="guest_user">Guest User!</h1>
+            </div>
+            <div class="flex items-center gap-2">
+                <div class="flex bg-white rounded-lg p-0.5 border border-gray-100 shadow-sm text-[10px] font-bold overflow-hidden mr-1">
+                    <button onclick="i18n.setLang('th')" id="lang-th" class="px-2 py-1 rounded-[5px]">TH</button>
+                    <button onclick="i18n.setLang('en')" id="lang-en" class="px-2 py-1 rounded-[5px]">EN</button>
+                </div>
+                <button class="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm border border-gray-100 btn-press text-ink-muted" onclick="showToast(i18n.t('coming_soon'), 'info')">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                </button>
+                <div class="w-10 h-10 rounded-lg overflow-hidden border border-gray-200 shadow-sm">
+                    <img id="user-picture" src="https://ui-avatars.com/api/?name=Guest&background=f3f4f6&color=111827" alt="Profile" class="w-full h-full object-cover">
+                </div>
+            </div>
+        </header>
+
+        <div class="px-6 mt-6">
+            <div class="bg-white rounded-xl px-4 py-3.5 flex items-center justify-between shadow-sm border border-gray-100 cursor-pointer" onclick="showToast(i18n.t('coming_soon'), 'info')">
+                <div class="flex items-center gap-3 text-ink-light">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    <span class="text-[14px] font-medium" data-i18n="search_placeholder">Search service...</span>
+                </div>
+                <svg class="w-5 h-5 text-ink-DEFAULT" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <line x1="4" y1="21" x2="4" y2="14"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="20" y1="21" x2="20" y2="16"></line>
+                </svg>
+            </div>
+        </div>
+
+        <div class="pl-6 pr-2 mt-5 flex gap-3 overflow-x-auto scroll-hide pb-2">
+            <div class="bg-brand text-white px-5 py-2.5 rounded-lg text-[13px] font-bold whitespace-nowrap flex items-center gap-2 shadow-md shadow-brand/20">
+                <span data-i18n="cleaning">Cleaning</span>
+            </div>
+            <div class="bg-white text-ink-muted border border-gray-200 px-5 py-2.5 rounded-lg text-[13px] font-semibold whitespace-nowrap cursor-pointer" onclick="showToast(i18n.t('coming_soon'), 'info')" data-i18n="laundry">Laundry</div>
+            <div class="bg-white text-ink-muted border border-gray-200 px-5 py-2.5 rounded-lg text-[13px] font-semibold whitespace-nowrap cursor-pointer" onclick="showToast(i18n.t('coming_soon'), 'info')" data-i18n="moving">Moving</div>
+            <div class="bg-white text-ink-muted border border-gray-200 px-5 py-2.5 rounded-lg text-[13px] font-semibold whitespace-nowrap cursor-pointer" onclick="showToast(i18n.t('coming_soon'), 'info')" data-i18n="repair">Repair</div>
+        </div>
+
+        <section class="px-6 mt-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="font-bold text-ink text-[16px]" data-i18n="exclusive_offers">Exclusive Offers</h3>
+                <span class="text-brand text-[12px] font-bold" data-i18n="see_all">See All</span>
+            </div>
+            <div class="flex gap-4 overflow-x-auto scroll-hide">
+                <div class="min-w-[280px] bg-gradient-to-br from-indigo-600 to-purple-700 rounded-[24px] p-5 text-white relative overflow-hidden btn-press cursor-pointer" onclick="openWheel()">
+                    <div class="relative z-10">
+                        <p class="text-[10px] font-bold uppercase tracking-widest text-indigo-200 mb-1" data-i18n="minigame">Minigame</p>
+                        <h4 class="text-[18px] font-black leading-tight" data-i18n="lucky_wheel_title">Daily Lucky Wheel</h4>
+                        <p class="text-[12px] text-indigo-100 mt-1 opacity-80" data-i18n="lucky_wheel_desc">Spin to win discount coupons!</p>
+                        <button class="bg-white text-indigo-600 text-[11px] font-bold px-4 py-2 rounded-lg mt-4 shadow-sm" data-i18n="play_now">Play Now</button>
+                    </div>
+                </div>
+                <div class="min-w-[280px] bg-gradient-to-br from-emerald-500 to-teal-600 rounded-[24px] p-5 text-white relative overflow-hidden btn-press cursor-pointer" onclick="openPackages()">
+                    <div class="relative z-10">
+                        <p class="text-[10px] font-bold uppercase tracking-widest text-emerald-100 mb-1">Value Pack</p>
+                        <h4 class="text-[18px] font-black leading-tight" data-i18n="package_title_promo">Momo Pro Membership</h4>
+                        <p class="text-[12px] text-emerald-50 mt-1 opacity-80" data-i18n="package_desc">Buy 120 บาท for only 1,990.-</p>
+                        <button class="bg-white text-emerald-600 text-[11px] font-bold px-4 py-2 rounded-lg mt-4 shadow-sm" data-i18n="buy_package">Buy Package</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="px-6 mt-4">
+            <div class="bg-brand rounded-2xl p-5 text-white shadow-lg relative overflow-hidden flex flex-col justify-between min-h-[140px]">
+                <div class="absolute -right-10 -bottom-10 w-40 h-40 bg-white opacity-10 rounded-full blur-2xl"></div>
+                <div class="relative z-10 flex justify-between items-start">
+                    <div>
+                        <span class="bg-white/20 text-white text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded mb-3 inline-block" data-i18n="wallet_balance">Wallet Balance</span>
+                        <div class="flex items-baseline gap-1.5">
+                            <h2 class="text-3xl font-extrabold tracking-tight" id="wallet-balance">—</h2>
+                            <span class="text-sm font-semibold text-brand-surface" data-i18n="currency">บาท</span>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-[10px] font-bold uppercase tracking-widest text-brand-surface opacity-80 block mb-1" data-i18n="points">Points</span>
+                        <div class="flex items-center justify-end gap-1 text-yellow-300">
+                            <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
+                            <span class="text-lg font-bold" id="point-balance">—</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="relative z-10 mt-4 flex items-center justify-between bg-black/10 rounded-xl p-3 border border-white/10">
+                    <div>
+                        <p class="text-[12px] font-bold" data-i18n="promo_banner">Buy 500 บาท, Get 100 Free</p>
+                        <p class="text-[10px] text-white/70" data-i18n="flash_sale">Flash Sale</p>
+                    </div>
+                    <button class="bg-white text-brand text-[11px] font-bold px-4 py-2 rounded-lg btn-press" onclick="location.href='/liff/wallet'" data-i18n="top_up">Top Up</button>
+                </div>
+            </div>
+        </section>
+
+        <section class="px-6 mt-6">
+            <div class="flex flex-col gap-4">
+                <div class="bg-white rounded-[16px] overflow-hidden shadow-card border border-gray-100 flex p-3 gap-4 relative btn-press cursor-pointer" onclick="startBooking('GENERAL_CLEANING')">
+                    <div class="w-28 h-28 bg-brand-surface rounded-xl flex items-center justify-center flex-shrink-0 relative overflow-hidden">
+                        <svg class="w-10 h-10 text-brand-light opacity-50" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M3 3l18 18M8.5 2.5l10 10M16 6l2 2-8 8-4-1 1-4z"></path></svg>
+                    </div>
+                    <div class="flex flex-col justify-between flex-1 py-1">
+                        <div>
+                            <p class="text-[10px] font-bold text-brand-light uppercase tracking-wider mb-1" data-i18n="cleaning">Cleaner</p>
+                            <h3 class="font-bold text-[15px] text-ink leading-tight mb-1" data-i18n="cleaning_general">General Cleaning</h3>
+                            <p class="text-[12px] text-ink-muted" data-i18n="verified_pro">Verified Professional</p>
+                        </div>
+                        <div class="flex items-center justify-between mt-2">
+                            <span class="font-bold text-[14px] text-ink">100 <span data-i18n="currency">บาท</span></span>
+                            <button class="bg-brand text-white text-[11px] font-bold px-4 py-2 rounded-lg shadow-sm pointer-events-none" data-i18n="book_now">Book Now</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="fixed bottom-0 w-full max-w-[430px] left-1/2 -translate-x-1/2 bg-white border-t border-gray-100 flex justify-around items-center px-6 py-4 z-[200] pb-[calc(1rem+env(safe-area-inset-bottom))]">
+        <a href="/liff/index" class="flex flex-col items-center gap-1 text-ink cursor-pointer">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+        </a>
+        <a href="/liff/wallet" class="flex flex-col items-center gap-1 text-ink-muted cursor-pointer hover:text-ink transition-colors">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <rect x="2" y="5" width="20" height="14" rx="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line>
+            </svg>
+        </a>
+        <a href="/liff/tracking" class="flex flex-col items-center gap-1 text-ink-muted cursor-pointer hover:text-ink transition-colors">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle>
+            </svg>
+        </a>
+        <a href="/liff/profile" class="flex flex-col items-center gap-1 text-ink-muted cursor-pointer hover:text-ink transition-colors">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+        </a>
+    </nav>
+
+    <!-- Modals -->
+    <div id="booking-modal" class="fixed inset-0 bg-ink/50 backdrop-blur-sm z-[300] hidden items-end" onclick="if(event.target===this) closeModal()">
+        <div class="bg-white w-full max-w-[430px] rounded-t-[32px] p-8 pb-12 animate-slide-up relative mx-auto">
+            <div class="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-6"></div>
+            <p class="text-[11px] font-bold text-brand uppercase tracking-widest mb-1" id="modal-eyebrow" data-i18n="service_summary">Service Summary</p>
+            <h2 class="font-extrabold text-[24px] text-ink leading-tight mb-3" id="modal-title">General Cleaning</h2>
+            <div id="modal-initial-view">
+                <p class="text-[13px] text-ink-muted leading-relaxed mb-6" data-i18n="match_desc">We'll match you with a verified professional near your location.</p>
+                <div class="bg-gray-50 border border-gray-100 rounded-[16px] p-5 mb-6">
+                    <div class="flex items-center justify-between py-2.5 border-b border-gray-200/60">
+                        <span class="text-[12px] font-semibold text-ink-light uppercase tracking-wider" data-i18n="service">Service</span>
+                        <span class="text-[14px] font-bold text-ink" id="modal-service-name">General Cleaning</span>
+                    </div>
+                    <div class="flex items-center justify-between pt-3.5 pb-1">
+                        <span class="text-[12px] font-semibold text-ink-light uppercase tracking-wider" data-i18n="total_cost">Total Cost</span>
+                        <span class="text-[18px] font-extrabold text-brand" id="modal-service-price">100 บาท</span>
+                    </div>
+                </div>
+                <button class="w-full bg-brand text-white font-bold py-4 rounded-[14px] btn-press shadow-lg shadow-brand/30" id="confirm-booking-btn" data-i18n="find_professional">Find a Professional</button>
+            </div>
+            <div id="modal-match-view" class="hidden">
+                <div class="bg-brand-surface rounded-[24px] p-6 border border-brand/10 mb-6 flex flex-col items-center text-center">
+                    <img id="matched-maid-pic" src="https://ui-avatars.com/api/?name=Maid&background=046c4e&color=fff" class="w-20 h-20 rounded-2xl mb-4 object-cover" alt="">
+                    <h3 class="font-extrabold text-[18px] text-ink" id="matched-maid-name">Maid Name</h3>
+                    <p class="text-[12px] text-brand font-bold uppercase tracking-widest mt-1" id="matched-maid-tier">PRO</p>
+                </div>
+                <div class="flex flex-col gap-3">
+                    <button class="w-full bg-brand text-white font-bold py-4 rounded-[14px] btn-press" id="final-confirm-btn" data-i18n="confirm_booking">Book Now</button>
+                    <button class="w-full bg-gray-50 text-ink-muted font-bold py-3 rounded-[14px] border border-gray-200 btn-press" id="reroll-btn"><span data-i18n="reroll">Re-roll</span> (<span id="reroll-count">3</span>)</button>
+                </div>
+            </div>
+            <button class="w-full text-center text-[13px] font-semibold text-ink-light py-3 mt-2" onclick="closeModal()" data-i18n="cancel">Cancel</button>
+        </div>
+    </div>
+    
+    <div id="wheel-modal" class="fixed inset-0 bg-ink/80 backdrop-blur-md z-[300] hidden items-center justify-center p-6" onclick="if(event.target===this) closeWheel()">
+        <div class="bg-white rounded-[32px] w-full max-w-[360px] p-8 text-center relative overflow-hidden">
+            <h3 class="font-extrabold text-[24px] text-ink leading-tight mb-8" data-i18n="lucky_spin">Lucky Spin</h3>
+            <div id="wheel-canvas" class="w-56 h-56 mx-auto rounded-full border-8 border-brand mb-10 transition-transform duration-[3s] ease-in-out flex items-center justify-center bg-brand/10 text-brand font-black">WIN</div>
+            <button id="spin-btn" class="w-full bg-brand text-white font-bold py-4 rounded-[18px]" onclick="spinWheel()" data-i18n="spin">SPIN</button>
+        </div>
+    </div>
+</div>
+
+<!-- 3. SCRIPTS AT BOTTOM: Ensures DOM is ready -->
+<script src="/static/liff/js/app.js?v=1.0.6"></script>
+<script src="/static/liff/js/home.js?v=1.0.6"></script>
+</body>
+</html>

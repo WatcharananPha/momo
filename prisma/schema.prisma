@@ -310,8 +310,10 @@ enum BookingStatus {
   PENDING
   AUTO_MATCHING
   CONFIRMED
-  CANCELLED
+  ARRIVED
+  IN_PROGRESS
   COMPLETED
+  CANCELLED
   NO_SHOW
 }
 
@@ -343,12 +345,59 @@ model Booking {
   user          User          @relation(fields: [userId], references: [id])
   maid          Maid?         @relation(fields: [maidId], references: [id])
   payment       Payment?
+  review        Review?
 
   @@index([userId])
   @@index([maidId])
   @@index([status])
   @@index([scheduledAt])
   @@map("bookings")
+}
+
+// ─── Post-Job & Behavior ──────────────────────────────────────────────────────
+
+model Review {
+  id         String   @id @default(uuid()) @db.Uuid
+  bookingId  String   @unique @db.Uuid @map("booking_id")
+  userId     String   @db.Uuid @map("user_id")
+  maidId     String   @db.Uuid @map("maid_id")
+  rating     Float
+  comment    String?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  booking    Booking  @relation(fields: [bookingId], references: [id])
+
+  @@map("reviews")
+}
+
+model CustomerTag {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid @map("user_id")
+  tag       String   // e.g., "PETS", "NO_SHOES", "AGGRESSIVE"
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@map("customer_tags")
+}
+
+// ─── Manual Payment Verification ──────────────────────────────────────────────
+
+enum SlipStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+model SlipUpload {
+  id         String     @id @default(uuid()) @db.Uuid
+  userId     String     @db.Uuid @map("user_id")
+  imageUrl   String     @map("image_url")
+  status     SlipStatus @default(PENDING)
+  amount     Decimal?   @db.Decimal(10, 2)
+  verifiedAt DateTime?  @map("verified_at")
+  createdAt  DateTime   @default(now()) @map("created_at")
+
+  @@map("slip_uploads")
 }
 
 // ─── Payments ─────────────────────────────────────────────────────────────────
@@ -368,7 +417,7 @@ enum PaymentProvider {
 
 model Payment {
   id         String          @id @default(uuid()) @db.Uuid
-  bookingId  String          @unique @db.Uuid @map("booking_id")
+  bookingId  String?         @unique @db.Uuid @map("booking_id")
   userId     String          @db.Uuid @map("user_id")
   amount     Decimal         @db.Decimal(10, 2)
   currency   String          @default("THB")
@@ -381,7 +430,7 @@ model Payment {
   createdAt  DateTime        @default(now()) @map("created_at")
   updatedAt  DateTime        @updatedAt @map("updated_at")
 
-  booking    Booking         @relation(fields: [bookingId], references: [id])
+  booking    Booking?        @relation(fields: [bookingId], references: [id])
   user       User            @relation(fields: [userId], references: [id])
 
   @@index([userId])

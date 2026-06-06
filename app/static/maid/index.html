@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Momo Pro — Partner Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <link rel="stylesheet" href="/static/maid/css/maid_style.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['"Inter"', 'sans-serif'] },
+                    colors: {
+                        partner: { DEFAULT: '#1e40af', light: '#3b82f6', dark: '#1e3a8a', surface: '#eff6ff' },
+                        slate: { 800: '#1e293b', 500: '#64748b', 400: '#94a3b8', 100: '#f1f5f9', 50: '#f8fafc' }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body>
+
+<div id="app-container">
+    
+    <div id="loading">
+        <div class="spinner-large"></div>
+        <div class="font-bold tracking-widest uppercase text-sm mt-2 text-white">Momo Partner</div>
+    </div>
+
+    <!-- Intro / Onboarding Screen -->
+    <div id="intro-page" class="absolute inset-0 bg-white z-40 hidden flex-col">
+        <div class="flex-1 p-8 flex flex-col justify-center items-center text-center">
+            <div class="w-24 h-24 bg-partner-surface rounded-full flex items-center justify-center mb-6">
+                <svg class="w-12 h-12 text-partner" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                    <path d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path>
+                </svg>
+            </div>
+            <h2 class="font-extrabold text-[28px] text-slate-800 leading-tight mb-3">Join as a Pro</h2>
+            <p class="text-slate-500 text-[14px] mb-8">Complete the onboarding test to activate your partner account and start receiving jobs.</p>
+            
+            <div class="w-full bg-slate-50 border border-slate-100 rounded-2xl p-5 mb-8 text-left">
+                <p class="font-bold text-[14px] text-slate-800 mb-2">Pre-test Requirements:</p>
+                <ul class="text-[12px] text-slate-500 space-y-2">
+                    <li class="flex items-center gap-2"><div class="w-1.5 h-1.5 rounded-full bg-partner"></div> 10 Multiple choice questions</li>
+                    <li class="flex items-center gap-2"><div class="w-1.5 h-1.5 rounded-full bg-partner"></div> 80% passing score required</li>
+                    <li class="flex items-center gap-2"><div class="w-1.5 h-1.5 rounded-full bg-partner"></div> Service quality & safety rules</li>
+                </ul>
+            </div>
+
+            <button onclick="startOnboarding()" class="w-full bg-partner text-white font-bold py-4 rounded-[16px] shadow-lg shadow-partner/20 btn-press">
+                Start Pre-Test
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Dashboard -->
+    <div id="app-content" class="h-full w-full overflow-y-auto scroll-hide pb-[100px]">
+        <div class="h-[env(safe-area-inset-top,0px)] bg-partner"></div>
+
+        <!-- Profile Header -->
+        <header class="bg-partner px-6 pt-8 pb-10 rounded-b-[32px] text-white shadow-md relative">
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center gap-4">
+                    <div class="relative">
+                        <img id="maid-picture" src="https://ui-avatars.com/api/?name=Partner&background=eff6ff&color=1e40af" class="w-14 h-14 rounded-2xl object-cover border-2 border-white/20" alt="Profile">
+                        <div class="absolute -bottom-1 -right-1 w-4 h-4 bg-green-400 border-2 border-partner rounded-full"></div>
+                    </div>
+                    <div>
+                        <p class="text-[11px] font-bold text-white/60 uppercase tracking-widest mb-0.5">Welcome back</p>
+                        <h1 class="font-extrabold text-[20px] leading-none" id="maid-name">Partner</h1>
+                    </div>
+                </div>
+                <div class="bg-white/10 p-2.5 rounded-xl border border-white/10">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                </div>
+            </div>
+
+            <div class="bg-white/10 border border-white/20 rounded-2xl p-4 flex items-center justify-between backdrop-blur-sm">
+                <div class="text-center flex-1">
+                    <p class="text-[10px] uppercase font-bold text-white/60 mb-1">Tier</p>
+                    <p class="text-[16px] font-black tracking-tight" id="maid-tier">PRO</p>
+                </div>
+                <div class="w-[1px] h-8 bg-white/20"></div>
+                <div class="text-center flex-1">
+                    <p class="text-[10px] uppercase font-bold text-white/60 mb-1">Rating</p>
+                    <div class="flex items-center justify-center gap-1">
+                        <svg class="w-3.5 h-3.5 text-yellow-400 fill-current" viewBox="0 0 24 24"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
+                        <p class="text-[16px] font-black tracking-tight" id="maid-rating">4.8</p>
+                    </div>
+                </div>
+                <div class="w-[1px] h-8 bg-white/20"></div>
+                <div class="text-center flex-1">
+                    <p class="text-[10px] uppercase font-bold text-white/60 mb-1">Jobs</p>
+                    <p class="text-[16px] font-black tracking-tight" id="maid-jobs">142</p>
+                </div>
+            </div>
+        </header>
+
+        <!-- Broadcast Jobs -->
+        <section class="px-6 mt-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="font-bold text-slate-800 text-[16px]">Job Requests <span class="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full ml-1 animate-pulse">NEW</span></h3>
+            </div>
+            
+            <div class="flex flex-col gap-4" id="jobs-container">
+                <!-- Jobs will be rendered here by JS -->
+            </div>
+        </section>
+
+        <!-- Active Job Tracking (Hidden by default, shown when job accepted) -->
+        <section id="active-job-section" class="px-6 mt-8 hidden">
+            <h3 class="font-bold text-slate-800 text-[16px] mb-4">Active Task</h3>
+            <div class="bg-slate-800 rounded-[20px] p-5 text-white shadow-xl relative overflow-hidden">
+                <div class="absolute right-0 top-0 w-32 h-32 bg-white/5 rounded-full blur-xl -mr-10 -mt-10"></div>
+                <div class="relative z-10">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="bg-partner text-[10px] font-bold px-2 py-1 rounded uppercase tracking-widest">En Route</span>
+                        <span class="font-bold text-[14px]" id="active-job-type">General Cleaning</span>
+                    </div>
+                    <h4 class="font-black text-[20px] mb-1" id="active-job-location">Sukhumvit 71, The Line</h4>
+                    <p class="text-[12px] text-slate-400 mb-6">Customer: Awaiting details</p>
+                    
+                    <div class="grid grid-cols-4 gap-2 mb-2">
+                        <div class="h-1.5 bg-partner rounded-full"></div>
+                        <div class="h-1.5 bg-slate-600 rounded-full" id="prog-2"></div>
+                        <div class="h-1.5 bg-slate-600 rounded-full" id="prog-3"></div>
+                        <div class="h-1.5 bg-slate-600 rounded-full" id="prog-4"></div>
+                    </div>
+                    <div class="flex justify-between text-[10px] font-bold text-slate-400 uppercase">
+                        <span>Go</span>
+                        <span>Arrive</span>
+                        <span>Start</span>
+                        <span>Done</span>
+                    </div>
+
+                    <button id="status-btn" class="w-full bg-white text-slate-900 font-black text-[14px] py-4 rounded-xl mt-6 btn-press" onclick="nextStatus()">
+                        I have Arrived
+                    </button>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Skill Matrix -->
+        <section class="px-6 mt-8 mb-6">
+            <h3 class="font-bold text-slate-800 text-[16px] mb-4">Skill Matrix</h3>
+            <div class="bg-white rounded-[20px] p-5 shadow-card border border-slate-100 flex flex-col gap-3">
+                <!-- Skill -->
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-[13px] font-bold text-slate-800">Cleaning</span>
+                        <span class="text-[12px] font-black text-partner">Level 5</span>
+                    </div>
+                    <div class="w-full bg-slate-100 rounded-full h-2">
+                        <div class="bg-partner h-2 rounded-full" style="width: 100%"></div>
+                    </div>
+                </div>
+                <!-- Skill -->
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-[13px] font-bold text-slate-800">Ironing</span>
+                        <span class="text-[12px] font-black text-partner">Level 3</span>
+                    </div>
+                    <div class="w-full bg-slate-100 rounded-full h-2">
+                        <div class="bg-partner h-2 rounded-full" style="width: 60%"></div>
+                    </div>
+                </div>
+                <!-- Skill -->
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-[13px] font-bold text-slate-800">Cooking</span>
+                        <span class="text-[12px] font-bold text-slate-400">Not Certified</span>
+                    </div>
+                    <div class="w-full bg-slate-100 rounded-full h-2">
+                        <div class="bg-slate-300 h-2 rounded-full" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- Navigation -->
+    <nav class="fixed bottom-0 w-full max-w-[430px] bg-white border-t border-slate-100 px-6 py-4 flex justify-between items-center pb-[calc(1rem+env(safe-area-inset-bottom))] z-20">
+        <div class="flex flex-col items-center gap-1 text-partner cursor-pointer">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+            <span class="text-[10px] font-bold">Jobs</span>
+        </div>
+        <div class="flex flex-col items-center gap-1 text-slate-400 cursor-pointer" onclick="showToast('Schedule management coming soon', 'info')">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+            <span class="text-[10px] font-bold">Schedule</span>
+        </div>
+        <div class="flex flex-col items-center gap-1 text-slate-400 cursor-pointer" onclick="showToast('Earnings dashboard coming soon', 'info')">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+            <span class="text-[10px] font-bold">Earnings</span>
+        </div>
+        <div class="flex flex-col items-center gap-1 text-slate-400 cursor-pointer" onclick="showToast('Partner settings coming soon', 'info')">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+            <span class="text-[10px] font-bold">Account</span>
+        </div>
+    </nav>
+</div>
+
+<script src="/static/maid/js/maid_app.js"></script>
+</body>
+</html>

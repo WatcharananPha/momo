@@ -4,7 +4,7 @@ from app.services.point_service import PointService
 from app.services.credit_service import CreditService
 import logging
 import random
-from datetime import datetime
+from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +19,7 @@ class GamificationService:
         if not campaign or not campaign.isActive:
             raise HTTPException(status_code=404, detail="Active campaign not found")
 
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         if now < campaign.startDate or now > campaign.endDate:
             raise HTTPException(status_code=400, detail="Campaign is not currently active")
 
@@ -33,11 +33,6 @@ class GamificationService:
 
         # Award reward
         if reward.type == "POINT":
-            # Using private DB method or point service directly? We have point service.
-            # However PointService earn points logic wasn't fully written in the python translation.
-            # Let's write a simple direct DB injection here or expand PointService later.
-            # Assuming PointService.earn_points exists (it doesn't yet, so let's mock the DB update for now or implement it)
-            logger.info(f"Would award {reward.value} POINTS")
             # Minimal Point injection
             await db.pointtransaction.create(
                 data={
@@ -74,6 +69,18 @@ class GamificationService:
 
         logger.info(f"User {user_id} won {reward.name} from Lucky Wheel")
         return {"reward_id": reward.id, "name": reward.name, "value": reward.value, "type": reward.type}
+
+    @staticmethod
+    async def get_active_campaigns():
+        now = datetime.now(timezone.utc)
+        return await db.campaign.find_many(
+            where={
+                "isActive": True,
+                "startDate": {"lte": now},
+                "endDate": {"gte": now}
+            },
+            include={"rewards": True}
+        )
 
     @staticmethod
     def _select_reward(rewards):

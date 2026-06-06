@@ -136,12 +136,31 @@ async def seed_campaigns():
     else:
         logger.info(f"Campaign {campaign_name} already exists, skipping.")
 
+async def seed_point_rules():
+    logger.info("Seeding Point Rules...")
+    rules = [
+        {
+            "ruleName": "NEW_MEMBER_ONBOARDING",
+            "type": "ONBOARDING",
+            "pointAmount": 100,
+            "isActive": True
+        }
+    ]
+    for rule in rules:
+        existing = await db.pointrule.find_first(where={"ruleName": rule["ruleName"]})
+        if not existing:
+            await db.pointrule.create(data=rule)
+            logger.info(f"Created point rule: {rule['ruleName']}")
+        else:
+            logger.info(f"Point rule {rule['ruleName']} already exists, skipping.")
+
 async def main():
     await db.connect()
     try:
         await seed_packages()
         await seed_maids()
         await seed_campaigns()
+        await seed_point_rules()
         logger.info("Seeding complete! 🌱")
     except Exception as e:
         logger.error(f"Seeding failed: {e}")

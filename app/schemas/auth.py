@@ -9,8 +9,10 @@ class GuestSessionResponse(BaseModel):
 
 class LineLoginDto(BaseModel):
     id_token: str = Field(..., description="ID token received from LINE LIFF/Login")
+    guest_uuid: Optional[str] = None
     
 class AuthResponse(BaseModel):
     access_token: str
     user_id: str
     is_guest: bool
+    is_new_user: Optional[bool] = False

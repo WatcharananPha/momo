@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Momo — Profile</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+    <link rel="stylesheet" href="/static/liff/css/style.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['"Inter"', 'sans-serif'] },
+                    colors: {
+                        brand: { DEFAULT: '#046c4e', light: '#059669', dark: '#034a36', surface: '#eefcf6' },
+                        ink: { DEFAULT: '#111827', muted: '#6b7280', light: '#9ca3af' },
+                        bg: '#f4f7f6'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body>
+
+<div id="app-container">
+    
+    <div id="loading">
+        <div class="spinner-large"></div>
+        <div class="font-bold tracking-widest uppercase text-sm mt-2 text-white">Momo Profile</div>
+    </div>
+
+    <div id="app-content" class="h-full w-full overflow-y-auto scroll-hide pb-[120px]">
+        <div class="h-[env(safe-area-inset-top,0px)]"></div>
+
+        <header class="px-6 pt-10 pb-8 flex flex-col items-center text-center">
+            <div class="relative mb-4">
+                <img id="user-picture" src="https://ui-avatars.com/api/?name=Guest&background=f3f4f6&color=111827" alt="Profile" class="w-24 h-24 rounded-3xl object-cover border-4 border-white shadow-xl">
+                <div class="absolute -bottom-1 -right-1 w-6 h-6 bg-brand border-4 border-white rounded-full"></div>
+            </div>
+            <h1 class="font-black text-[24px] text-ink tracking-tight" id="user-name">Guest User</h1>
+            <p class="text-ink-muted text-[13px] font-medium" id="user-tier">Silver Member</p>
+        </header>
+
+        <section class="px-6 space-y-4">
+            <div class="bg-white rounded-[24px] overflow-hidden shadow-card border border-gray-100 flex flex-col">
+                <div class="p-5 flex items-center justify-between btn-press cursor-pointer" onclick="showToast('Edit profile coming soon', 'info')">
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 bg-brand-surface text-brand rounded-xl flex items-center justify-center">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                        </div>
+                        <span class="font-bold text-[14px] text-ink">Personal Information</span>
+                    </div>
+                    <svg class="w-4 h-4 text-ink-light" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"></path></svg>
+                </div>
+                <div class="w-full h-[1px] bg-gray-50 mx-auto max-w-[90%]"></div>
+                <div class="p-5 flex items-center justify-between btn-press cursor-pointer" onclick="shareReferral()">
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 bg-orange-50 text-orange-500 rounded-xl flex items-center justify-center">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                        </div>
+                        <span class="font-bold text-[14px] text-ink">Referral Program</span>
+                    </div>
+                    <span class="bg-orange-100 text-orange-600 text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter">Earn Points</span>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-[24px] overflow-hidden shadow-card border border-gray-100 flex flex-col">
+                <div class="p-5 flex items-center justify-between btn-press cursor-pointer" onclick="showToast('Settings coming soon', 'info')">
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 bg-slate-100 text-slate-500 rounded-xl flex items-center justify-center">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"></path><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                        </div>
+                        <span class="font-bold text-[14px] text-ink">Account Settings</span>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="liff.logout(); localStorage.removeItem('momo_token'); location.reload();" class="w-full bg-red-50 text-red-600 font-bold py-4 rounded-2xl btn-press text-[14px]">
+                Log Out
+            </button>
+        </section>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="fixed bottom-0 w-full max-w-[430px] left-1/2 -translate-x-1/2 bg-white border-t border-gray-100 flex justify-around items-center px-6 py-4 z-20 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+        <a href="/liff/index" class="flex flex-col items-center gap-1 text-ink-muted cursor-pointer hover:text-ink transition-colors">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline>
+            </svg>
+        </a>
+        <a href="/liff/wallet" class="flex flex-col items-center gap-1 text-ink-muted cursor-pointer hover:text-ink transition-colors">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <rect x="2" y="5" width="20" height="14" rx="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line>
+            </svg>
+        </a>
+        <a href="/liff/tracking" class="flex flex-col items-center gap-1 text-ink-muted cursor-pointer hover:text-ink transition-colors">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle>
+            </svg>
+        </a>
+        <a href="/liff/profile" class="flex flex-col items-center gap-1 text-ink cursor-pointer">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle>
+            </svg>
+        </a>
+    </nav>
+</div>
+
+<script src="/static/liff/js/app.js"></script>
+<script>
+    async function initProfile() {
+        await initCoreLiff(true);
+        if (userProfile) {
+            document.getElementById('user-name').textContent = userProfile.displayName;
+            document.getElementById('user-picture').src = userProfile.pictureUrl;
+            
+            // Fetch membership tier
+            try {
+                const res = await fetch(`${API_BASE}/points/balance/me`, {
+                    headers: { 'Authorization': `Bearer ${accessToken}` }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    // Assuming membership tier is part of user/points data or can be inferred
+                    // For now mock
+                }
+            } catch (e) {}
+        }
+    }
+    document.addEventListener("DOMContentLoaded", initProfile);
+</script>
+</body>
+</html>

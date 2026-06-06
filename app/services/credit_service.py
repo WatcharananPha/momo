@@ -2,6 +2,7 @@ from fastapi import HTTPException, status
 from app.core.database import db
 from prisma.enums import BookingType
 from datetime import datetime, timedelta
+from typing import List
 import logging
 
 logger = logging.getLogger(__name__)
@@ -84,22 +85,53 @@ class CreditService:
         return wallet
 
     @staticmethod
+    async def get_history(user_id: str):
+        wallet = await db.creditwallet.find_unique(where={"userId": user_id})
+        if not wallet:
+            return []
+            
+        transactions = await db.credittransaction.find_many(
+            where={"walletId": wallet.id},
+            order={"createdAt": "desc"}
+        )
+        return transactions
+
+    @staticmethod
+    async def get_packages():
+        return await db.package.find_many(where={"isActive": True})
+
+    @staticmethod
     def calculate_credit_cost(service_type: BookingType, party_size: int, maid_tier: str) -> int:
         base = SERVICE_CREDIT_MAPPING.get(service_type, 10)
         
+        # Ensure maid_tier is string for comparison
+        tier_str = str(maid_tier).split('.')[-1] if '.' in str(maid_tier) else str(maid_tier)
+        
         multiplier = 1.0
-        if maid_tier == 'PRO': multiplier = 1.2
-        elif maid_tier == 'ELITE': multiplier = 1.5
-        elif maid_tier == 'MASTER': multiplier = 2.0
+        if tier_str == 'PRO': multiplier = 1.2
+        elif tier_str == 'ELITE': multiplier = 1.5
+        elif tier_str == 'MASTER': multiplier = 2.0
         
         return int(base * party_size * multiplier)
 
     @staticmethod
-    async def purchase_subscription(user_id: str, package_id: str):
+    async def purchase_subscription(user_id: str, package_id: str, omise_token: str = None):
+        from app.services.payment_service import PaymentService
+        
         pkg = await db.package.find_unique(where={"id": package_id})
         if not pkg:
             raise HTTPException(status_code=404, detail="Package not found")
             
+        # Create charge via Omise
+        # price is Decimal, convert to Satang (int)
+        amount_satang = int(pkg.price * 100)
+        
+        charge = await PaymentService.create_charge(
+            amount_in_satang=amount_satang,
+            token=omise_token,
+            description=f"Purchase Package: {pkg.name}"
+        )
+        
         start_date = datetime.utcnow()
         end_date = start_date + timedelta(days=pkg.durationDays)
         
@@ -114,7 +146,20 @@ class CreditService:
                 }
             )
             
-        # Top up outside transaction to reuse the top_up logic
+            # Record payment
+            await transaction.payment.create(
+                data={
+                    "userId": user_id,
+                    "bookingId": None, # This is a package purchase, not a booking
+                    "amount": pkg.price,
+                    "status": "PAID",
+                    "provider": "OMISE",
+                    "chargeId": str(charge.get("id")) if isinstance(charge, dict) else charge.id,
+                    "metadata": "{}"
+                }
+            )
+            
+        # Top up credits
         await CreditService.top_up(user_id, pkg.credits, sub.id)
         
         return sub

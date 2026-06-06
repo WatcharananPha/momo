@@ -1,3 +1,4 @@
+/// <reference types="node" />
 /**
  * Prisma Seed — bootstraps mandatory reference data.
  * Run: npm run prisma:seed
