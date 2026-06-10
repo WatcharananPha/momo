@@ -8,7 +8,11 @@ import logging
 logger = logging.getLogger(__name__)
 
 SERVICE_CREDIT_MAPPING = {
-    BookingType.CLEANING: 10,
+    BookingType.GENERAL_CLEANING: 10,
+    BookingType.DEEP_CLEANING: 30,
+    BookingType.LAUNDRY: 15,
+    BookingType.MOVING: 50,
+    BookingType.REPAIR: 25,
     BookingType.COOKING: 15,
     BookingType.IRONING: 12,
 }

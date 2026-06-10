@@ -187,12 +187,33 @@ async function fetchCreditHistory() {
     }
 }
 
-function handleGetStarted() {
-    if (!liff.isLoggedIn()) {
-        liff.login({ redirectUri: window.location.origin + "/liff" });
-    } else {
-        const intro = document.getElementById('intro-page');
-        if (intro) intro.classList.add('hidden');
-        initCoreLiff(true);
+async function shareReferral() {
+    if (!accessToken) return;
+    try {
+        const res = await fetch(`${API_BASE}/points/balance/me`, {
+            headers: { 'Authorization': `Bearer ${accessToken}` }
+        });
+        const data = await res.json();
+        const referralCode = data.referral_code || 'MOMO888';
+        const shareText = `Try Momo — effortless home care! Use my code ${referralCode} to get 50 bonus points. Sign up here: ${window.location.origin}/liff`;
+
+        if (liff.isApiAvailable && liff.isApiAvailable('shareTargetPicker')) {
+            await liff.shareTargetPicker([{
+                type: "text",
+                text: shareText
+            }]);
+        } else {
+            // Fallback: Copy to clipboard
+            const el = document.createElement('textarea');
+            el.value = shareText;
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
+            showToast("Referral link copied to clipboard!", "success");
+        }
+    } catch (e) {
+        console.error("Referral Error:", e);
+        showToast("Could not share referral", "error");
     }
 }

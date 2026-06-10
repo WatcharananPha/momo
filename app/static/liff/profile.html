@@ -45,24 +45,27 @@
 
         <section class="px-6 space-y-4">
             <div class="bg-white rounded-[24px] overflow-hidden shadow-card border border-gray-100 flex flex-col">
-                <div class="p-5 flex items-center justify-between btn-press cursor-pointer" onclick="showToast('Edit profile coming soon', 'info')">
+                <div class="p-5 flex items-center justify-between cursor-default">
                     <div class="flex items-center gap-4">
                         <div class="w-10 h-10 bg-brand-surface text-brand rounded-xl flex items-center justify-center">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
                         </div>
-                        <span class="font-bold text-[14px] text-ink">Personal Information</span>
+                        <div>
+                            <span class="font-bold text-[14px] text-ink block">Referral Code</span>
+                            <span class="text-[12px] text-ink-muted" id="ref-code-text">LOADING...</span>
+                        </div>
                     </div>
-                    <svg class="w-4 h-4 text-ink-light" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"></path></svg>
+                    <button class="text-brand font-bold text-[12px] bg-brand-surface px-3 py-1.5 rounded-lg btn-press" onclick="shareReferral()">Share</button>
                 </div>
                 <div class="w-full h-[1px] bg-gray-50 mx-auto max-w-[90%]"></div>
-                <div class="p-5 flex items-center justify-between btn-press cursor-pointer" onclick="shareReferral()">
+                <div class="p-5 flex items-center justify-between btn-press cursor-pointer" onclick="location.href='/liff/wallet'">
                     <div class="flex items-center gap-4">
                         <div class="w-10 h-10 bg-orange-50 text-orange-500 rounded-xl flex items-center justify-center">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
                         </div>
-                        <span class="font-bold text-[14px] text-ink">Referral Program</span>
+                        <span class="font-bold text-[14px] text-ink">My Wallet</span>
                     </div>
-                    <span class="bg-orange-100 text-orange-600 text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-tighter">Earn Points</span>
+                    <svg class="w-4 h-4 text-ink-light" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"></path></svg>
                 </div>
             </div>
 
@@ -116,17 +119,26 @@
             document.getElementById('user-name').textContent = userProfile.displayName;
             document.getElementById('user-picture').src = userProfile.pictureUrl;
             
-            // Fetch membership tier
+            // Fetch membership tier and referral code
             try {
                 const res = await fetch(`${API_BASE}/points/balance/me`, {
                     headers: { 'Authorization': `Bearer ${accessToken}` }
                 });
                 if (res.ok) {
                     const data = await res.json();
-                    // Assuming membership tier is part of user/points data or can be inferred
-                    // For now mock
+                    document.getElementById('ref-code-text').textContent = data.referral_code || 'N/A';
+                    
+                    const tierNames = {
+                        SILVER: 'Silver Member',
+                        GOLD: 'Gold Member',
+                        PLATINUM: 'Platinum Member',
+                        DIAMOND: 'Diamond Member'
+                    };
+                    document.getElementById('user-tier').textContent = tierNames[data.tier] || 'Silver Member';
                 }
-            } catch (e) {}
+            } catch (e) {
+                console.error("Profile load error", e);
+            }
         }
     }
     document.addEventListener("DOMContentLoaded", initProfile);

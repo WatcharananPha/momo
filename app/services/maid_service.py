@@ -53,14 +53,29 @@ class MaidService:
         from prisma.enums import BookingStatus
         pending_jobs = await db.booking.find_many(
             where={
-                "status": BookingStatus.AUTO_MATCHING, # Or a specific broadcast status
+                "status": BookingStatus.AUTO_MATCHING,
             },
+            include={"user": {"include": {"membership": True}}},
             order={"createdAt": "desc"}
         )
         
-        # Filter jobs based on maid's skills (basic simulation)
-        # In a real app, you'd check distance, schedule conflicts, etc.
-        eligible_jobs = [job for job in pending_jobs if str(job.type) in maid_skills]
+        # Filter and enhance jobs
+        eligible_jobs = []
+        for job in pending_jobs:
+            if str(job.type) in maid_skills:
+                # Fetch customer tags
+                tags = await db.customertag.find_many(where={"userId": job.userId})
+                eligible_jobs.append({
+                    "id": job.id,
+                    "type": job.type,
+                    "location_name": job.locationName,
+                    "party_size": job.partySize,
+                    "notes": job.notes,
+                    "credit_cost": job.creditCost,
+                    "customer_name": job.user.displayName,
+                    "customer_tags": [t.tag for t in tags],
+                    "membership_tier": job.user.membership.tier if job.user.membership else "SILVER"
+                })
         return eligible_jobs
 
     @staticmethod

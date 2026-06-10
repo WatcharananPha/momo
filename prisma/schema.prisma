@@ -318,7 +318,11 @@ enum BookingStatus {
 }
 
 enum BookingType {
-  CLEANING
+  GENERAL_CLEANING
+  DEEP_CLEANING
+  LAUNDRY
+  MOVING
+  REPAIR
   COOKING
   IRONING
 }

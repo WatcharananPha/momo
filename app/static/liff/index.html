@@ -101,14 +101,11 @@
         </header>
 
         <div class="px-6 mt-6">
-            <div class="bg-white rounded-xl px-4 py-3.5 flex items-center justify-between shadow-sm border border-gray-100 cursor-pointer" onclick="showToast(i18n.t('coming_soon'), 'info')">
+            <div class="bg-white rounded-xl px-4 py-3.5 flex items-center justify-between shadow-sm border border-gray-100 cursor-pointer" onclick="location.href='/liff/search'">
                 <div class="flex items-center gap-3 text-ink-light">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                     <span class="text-[14px] font-medium" data-i18n="search_placeholder">Search service...</span>
                 </div>
-                <svg class="w-5 h-5 text-ink-DEFAULT" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                    <line x1="4" y1="21" x2="4" y2="14"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="20" y1="21" x2="20" y2="16"></line>
-                </svg>
             </div>
         </div>
 
@@ -116,9 +113,9 @@
             <div class="bg-brand text-white px-5 py-2.5 rounded-lg text-[13px] font-bold whitespace-nowrap flex items-center gap-2 shadow-md shadow-brand/20">
                 <span data-i18n="cleaning">Cleaning</span>
             </div>
-            <div class="bg-white text-ink-muted border border-gray-200 px-5 py-2.5 rounded-lg text-[13px] font-semibold whitespace-nowrap cursor-pointer" onclick="showToast(i18n.t('coming_soon'), 'info')" data-i18n="laundry">Laundry</div>
-            <div class="bg-white text-ink-muted border border-gray-200 px-5 py-2.5 rounded-lg text-[13px] font-semibold whitespace-nowrap cursor-pointer" onclick="showToast(i18n.t('coming_soon'), 'info')" data-i18n="moving">Moving</div>
-            <div class="bg-white text-ink-muted border border-gray-200 px-5 py-2.5 rounded-lg text-[13px] font-semibold whitespace-nowrap cursor-pointer" onclick="showToast(i18n.t('coming_soon'), 'info')" data-i18n="repair">Repair</div>
+            <div class="bg-white text-ink-muted border border-gray-200 px-5 py-2.5 rounded-lg text-[13px] font-semibold whitespace-nowrap cursor-pointer" onclick="startBooking('LAUNDRY')" data-i18n="laundry">Laundry</div>
+            <div class="bg-white text-ink-muted border border-gray-200 px-5 py-2.5 rounded-lg text-[13px] font-semibold whitespace-nowrap cursor-pointer" onclick="startBooking('MOVING')" data-i18n="moving">Moving</div>
+            <div class="bg-white text-ink-muted border border-gray-200 px-5 py-2.5 rounded-lg text-[13px] font-semibold whitespace-nowrap cursor-pointer" onclick="startBooking('REPAIR')" data-i18n="repair">Repair</div>
         </div>
 
         <section class="px-6 mt-6">

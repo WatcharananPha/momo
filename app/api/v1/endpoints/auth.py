@@ -48,6 +48,7 @@ async def login_line(data: LineLoginDto):
         line_uid=line_uid,
         display_name=display_name,
         profile_url=profile_url,
+        referral_code=data.referral_code,
         guest_uuid=data.guest_uuid
     )
     

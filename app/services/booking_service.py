@@ -5,6 +5,7 @@ from app.services.maid_service import MaidService
 from prisma.enums import BookingStatus, BookingType
 from datetime import datetime
 import uuid
+from app.services.line_service import LineService
 import logging
 
 logger = logging.getLogger(__name__)
@@ -114,7 +115,10 @@ class BookingService:
     @staticmethod
     async def final_confirmation(booking_id: str):
         # Step 15-21: Final Confirmation
-        booking = await db.booking.find_unique(where={"id": booking_id})
+        booking = await db.booking.find_unique(
+            where={"id": booking_id},
+            include={"user": True, "maid": True}
+        )
         if not booking:
             raise HTTPException(status_code=404, detail="Booking not found")
             
@@ -132,14 +136,25 @@ class BookingService:
         # Step 20: Update Booking Status CONFIRMED
         updated_booking = await db.booking.update(
             where={"id": booking_id},
-            data={"status": BookingStatus.CONFIRMED}
+            data={"status": BookingStatus.CONFIRMED},
+            include={"maid": True}
         )
         
+        # Notify User
+        if booking.user.lineUid:
+            LineService.push_message(
+                booking.user.lineUid,
+                f"ยืนยันการจองสำเร็จ! {updated_booking.maid.fullName} จะไปดูแลคุณตามเวลาที่นัดหมายครับ"
+            )
+            
         return updated_booking
 
     @staticmethod
     async def update_status(booking_id: str, status: BookingStatus):
-        booking = await db.booking.find_unique(where={"id": booking_id})
+        booking = await db.booking.find_unique(
+            where={"id": booking_id},
+            include={"user": True, "maid": True}
+        )
         if not booking:
             raise HTTPException(status_code=404, detail="Booking not found")
             
@@ -149,6 +164,18 @@ class BookingService:
             
         updated_booking = await db.booking.update(
             where={"id": booking_id},
-            data=data
+            data=data,
+            include={"user": True, "maid": True}
         )
+        
+        # Push Notifications
+        if updated_booking.user.lineUid:
+            status_msgs = {
+                BookingStatus.ARRIVED: f"แม่บ้าน {updated_booking.maid.fullName} เดินทางถึงสถานที่ของคุณแล้วครับ",
+                BookingStatus.IN_PROGRESS: f"แม่บ้าน {updated_booking.maid.fullName} เริ่มงานทำความสะอาดแล้วครับ",
+                BookingStatus.COMPLETED: f"งานของคุณเสร็จเรียบร้อยแล้วครับ! อย่าลืมประเมินผลงานเพื่อรับแต้มสะสมนะครับ"
+            }
+            if status in status_msgs:
+                LineService.push_message(updated_booking.user.lineUid, status_msgs[status])
+                
         return updated_booking

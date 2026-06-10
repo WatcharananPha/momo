@@ -4,6 +4,8 @@ from linebot.v3.messaging import (
     ApiClient,
     MessagingApi,
     ReplyMessageRequest,
+    PushMessageRequest,
+    BroadcastRequest,
     TextMessage
 )
 from linebot.v3.webhooks import MessageEvent, TextMessageContent, FollowEvent, ImageMessageContent
@@ -17,6 +19,33 @@ class LineService:
     @staticmethod
     async def handle_webhook(body: str, signature: str):
         handler.handle(body, signature)
+
+    @staticmethod
+    def push_message(to: str, message_text: str):
+        with ApiClient(configuration) as api_client:
+            line_bot_api = MessagingApi(api_client)
+            try:
+                line_bot_api.push_message(
+                    PushMessageRequest(
+                        to=to,
+                        messages=[TextMessage(text=message_text)]
+                    )
+                )
+            except Exception as e:
+                print(f"Error pushing LINE message: {e}")
+
+    @staticmethod
+    def broadcast_message(message_text: str):
+        with ApiClient(configuration) as api_client:
+            line_bot_api = MessagingApi(api_client)
+            try:
+                line_bot_api.broadcast(
+                    BroadcastRequest(
+                        messages=[TextMessage(text=message_text)]
+                    )
+                )
+            except Exception as e:
+                print(f"Error broadcasting LINE message: {e}")
 
 @handler.add(MessageEvent, message=TextMessageContent)
 def handle_message(event):

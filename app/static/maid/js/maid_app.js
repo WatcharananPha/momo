@@ -178,21 +178,27 @@ function renderJobs(jobs) {
     }
 
     jobs.forEach(job => {
+        const tagsHtml = job.customer_tags.map(tag => `<span class="bg-partner-surface text-partner text-[10px] px-2 py-0.5 rounded font-bold uppercase">${tag}</span>`).join(' ');
+        
         const html = `
-            <div class="bg-white rounded-[20px] p-5 shadow-card border border-slate-100" id="job-card-${job.id}">
+            <div class="bg-white rounded-[20px] p-5 shadow-card border border-slate-100 mb-4" id="job-card-${job.id}">
                 <div class="flex items-start justify-between mb-3">
                     <div class="flex items-center gap-2">
-                        <div class="w-8 h-8 bg-partner-surface text-partner rounded-full flex items-center justify-center">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 3l18 18M8.5 2.5l10 10M16 6l2 2-8 8-4-1 1-4z"></path></svg>
+                        <div class="w-10 h-10 bg-partner-surface text-partner rounded-xl flex items-center justify-center">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 3l18 18M8.5 2.5l10 10M16 6l2 2-8 8-4-1 1-4z"></path></svg>
                         </div>
                         <div>
-                            <h4 class="font-bold text-[14px] text-slate-800">${job.type}</h4>
-                            <p class="text-[11px] font-semibold text-partner">${job.party_size} Hours • ${job.location_name}</p>
+                            <h4 class="font-bold text-[15px] text-slate-800">${job.type}</h4>
+                            <p class="text-[12px] font-semibold text-partner">${job.party_size} Hours • ${job.location_name}</p>
                         </div>
                     </div>
-                    <span class="font-black text-[16px] text-slate-800">${job.credit_cost} บาท</span>
+                    <span class="font-black text-[18px] text-slate-800">${job.credit_cost} <span class="text-[10px]">บาท</span></span>
                 </div>
-                <button class="w-full bg-partner text-white font-bold text-[13px] py-3 rounded-xl btn-press shadow-sm" onclick="acceptJob(this, '${job.id}', '${job.type}', '${job.location_name}')">
+                <div class="flex flex-wrap gap-2 mb-4">
+                    <span class="bg-slate-100 text-slate-500 text-[10px] px-2 py-0.5 rounded font-bold uppercase">${job.membership_tier}</span>
+                    ${tagsHtml}
+                </div>
+                <button class="w-full bg-partner text-white font-bold text-[14px] py-3.5 rounded-xl btn-press shadow-lg shadow-partner/20" onclick="acceptJob(this, '${job.id}', '${job.type}', '${job.location_name}', '${job.customer_name}', '${job.notes}', '${job.customer_tags.join(',')}')">
                     Accept Job
                 </button>
             </div>
@@ -201,8 +207,8 @@ function renderJobs(jobs) {
     });
 }
 
-async function acceptJob(btn, jobId, type, location) {
-    btn.innerHTML = '<div class="spinner-small mx-auto"></div>';
+async function acceptJob(btn, jobId, type, location, customerName, notes, tagsStr) {
+    btn.innerHTML = '<div class="spinner-small mx-auto border-white border-t-transparent"></div>';
     btn.disabled = true;
     
     try {
@@ -219,6 +225,37 @@ async function acceptJob(btn, jobId, type, location) {
             const activeSection = document.getElementById('active-job-section');
             document.getElementById('active-job-type').textContent = type;
             document.getElementById('active-job-location').textContent = location;
+            
+            // Add Job Instructions
+            const tags = tagsStr ? tagsStr.split(',') : [];
+            const tagsHtml = tags.map(tag => `<span class="bg-white/10 text-white text-[10px] px-2 py-1 rounded font-bold uppercase border border-white/10">${tag}</span>`).join(' ');
+            
+            const instructionHtml = `
+                <div class="mt-6 pt-6 border-t border-white/10">
+                    <p class="text-[10px] font-bold text-white/50 uppercase tracking-widest mb-3">Job Instructions</p>
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center font-bold text-white">${customerName.charAt(0)}</div>
+                        <div>
+                            <p class="font-bold text-[14px] text-white">${customerName}</p>
+                            <p class="text-[11px] text-white/60">Preferred Customer</p>
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap gap-2 mb-4">${tagsHtml}</div>
+                    <div class="bg-white/5 rounded-xl p-3 border border-white/5">
+                        <p class="text-[12px] text-white/80 italic">"${notes || 'No special notes'}"</p>
+                    </div>
+                </div>
+            `;
+            
+            // Insert before the status button
+            const statusBtn = document.getElementById('status-btn');
+            const existingInstr = document.getElementById('job-instr-container');
+            if (existingInstr) existingInstr.remove();
+            
+            const instrContainer = document.createElement('div');
+            instrContainer.id = 'job-instr-container';
+            instrContainer.innerHTML = instructionHtml;
+            statusBtn.parentElement.insertBefore(instrContainer, statusBtn);
             
             activeSection.classList.remove('hidden');
             activeSection.scrollIntoView({ behavior: 'smooth', block: 'center' });

@@ -1,6 +1,9 @@
 const SERVICE_INFO = {
     GENERAL_CLEANING: { nameKey: "cleaning_general", price: 100, titleKey: "cleaning_general" },
-    DEEP_CLEANING:    { nameKey: "cleaning_deep",    price: 300, titleKey: "cleaning_deep"    }
+    DEEP_CLEANING:    { nameKey: "cleaning_deep",    price: 300, titleKey: "cleaning_deep"    },
+    LAUNDRY:          { nameKey: "laundry",          price: 150, titleKey: "laundry"          },
+    MOVING:           { nameKey: "moving",           price: 500, titleKey: "moving"           },
+    REPAIR:           { nameKey: "repair",           price: 250, titleKey: "repair"           }
 };
 
 let currentService = null;
@@ -59,17 +62,22 @@ document.getElementById('booking-modal').addEventListener('click', function(e) {
 
 document.getElementById('confirm-booking-btn').onclick = async () => {
     const btn = document.getElementById('confirm-booking-btn');
-    const txt = document.getElementById('btn-text');
     btn.disabled = true;
-    txt.innerHTML = '<div class="spinner-small"></div> Finding Professional...';
+    btn.innerHTML = '<div class="spinner-small mx-auto"></div> Finding Professional...';
 
     try {
         if (!accessToken) throw new Error("Not authenticated");
         
-        const res = await fetch(`${API_BASE}/bookings/match`, {
+        const res = await fetch(`${API_BASE}/bookings/confirm`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
-            body: JSON.stringify({ service_type: currentService, party_size: 1, hours: 2, location_lat: 13.7563, location_lng: 100.5018 })
+            body: JSON.stringify({ 
+                type: currentService, 
+                party_size: 1, 
+                scheduled_at: new Date(Date.now() + 3600000).toISOString(), 
+                location_name: "My Home",
+                notes: "Please be on time."
+            })
         });
         
         if (res.ok) {
@@ -81,18 +89,10 @@ document.getElementById('confirm-booking-btn').onclick = async () => {
         }
     } catch (e) {
         console.error("Booking Match Error:", e);
-        // Simulated Success for UX testing purposes when API is not up
-        setTimeout(() => {
-            showMatch({
-                full_name: "คุณสมศรี ใจดี",
-                tier: "MASTER",
-                rating: 4.9,
-                profilePictureUrl: null
-            });
-        }, 1000);
+        showToast(e.message, "error");
     } finally {
         btn.disabled = false;
-        txt.textContent = 'Find a Professional';
+        btn.textContent = i18n.t('find_professional');
     }
 };
 
@@ -100,71 +100,73 @@ function showMatch(maid) {
     document.getElementById('modal-initial-view').classList.add('hidden');
     document.getElementById('modal-match-view').classList.remove('hidden');
     
-    document.getElementById('matched-maid-name').textContent = maid.full_name || maid.fullName;
+    document.getElementById('matched-maid-name').textContent = maid.fullName || maid.full_name;
     document.getElementById('matched-maid-tier').textContent = `${maid.tier} Level`;
-    document.getElementById('matched-maid-rating').textContent = maid.rating;
     if (maid.profilePictureUrl) {
         document.getElementById('matched-maid-pic').src = maid.profilePictureUrl;
     }
 }
 
 document.getElementById('reroll-btn').onclick = async () => {
-    if (rerollsLeft <= 0) return;
+    if (!currentBooking || rerollsLeft <= 0) return;
     
     const btn = document.getElementById('reroll-btn');
     btn.disabled = true;
-    btn.innerHTML = '<div class="spinner-small"></div> Re-rolling...';
+    btn.innerHTML = '<div class="spinner-small mx-auto"></div> Re-rolling...';
 
     try {
-        setTimeout(() => {
+        const res = await fetch(`${API_BASE}/bookings/${currentBooking.id}/reroll`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${accessToken}` }
+        });
+
+        if (res.ok) {
+            currentBooking = await res.json();
             rerollsLeft--;
             document.getElementById('reroll-count').textContent = rerollsLeft;
             if (rerollsLeft <= 0) btn.classList.add('opacity-50', 'cursor-not-allowed');
-            
-            showMatch({
-                full_name: "คุณประนอม ขยันงาน",
-                tier: "ELITE",
-                rating: 4.7,
-                profilePictureUrl: null
-            });
-            btn.disabled = false;
-            btn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg> Re-roll Maid (<span id="reroll-count">${rerollsLeft}</span> left)`;
-        }, 800);
+            showMatch(currentBooking.maid);
+        } else {
+            const err = await res.json();
+            throw new Error(err.detail || "Reroll failed");
+        }
     } catch (e) {
-        showToast("Reroll failed", "error");
+        showToast(e.message, "error");
+    } finally {
         btn.disabled = false;
+        btn.innerHTML = `<span data-i18n="reroll">${i18n.t('reroll')}</span> (<span id="reroll-count">${rerollsLeft}</span>)`;
     }
 };
 
 document.getElementById('final-confirm-btn').onclick = async () => {
+    if (!currentBooking) return;
+
     const btn = document.getElementById('final-confirm-btn');
     btn.disabled = true;
-    btn.innerHTML = '<div class="spinner-small"></div> Confirming...';
+    btn.innerHTML = '<div class="spinner-small mx-auto"></div> Confirming...';
 
     try {
-        setTimeout(() => {
+        const res = await fetch(`${API_BASE}/bookings/${currentBooking.id}/final-confirm`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${accessToken}` }
+        });
+
+        if (res.ok) {
             closeModal();
             updateDashboardData();
             showToast("Booking Confirmed! Your professional is on the way.", "success");
-        }, 1000);
+            setTimeout(() => { location.href = '/liff/tracking'; }, 2000);
+        } else {
+            const err = await res.json();
+            throw new Error(err.detail || "Confirmation failed");
+        }
     } catch (e) {
-        showToast("Confirmation failed", "error");
+        showToast(e.message, "error");
     } finally {
         btn.disabled = false;
-        btn.textContent = 'Book this Professional';
+        btn.textContent = i18n.t('confirm_booking');
     }
 };
-
-function shareReferral() {
-    if (liff.isApiAvailable && liff.isApiAvailable('shareTargetPicker')) {
-        liff.shareTargetPicker([{
-            type: "text",
-            text: "Try Momo — effortless home care. Sign up and get 50 welcome points: " + window.location.href
-        }]).catch(console.error);
-    } else {
-        showToast("Referral link copied to clipboard!", "success");
-    }
-}
 
 function openWheel() {
     document.getElementById('wheel-modal').classList.remove('hidden');

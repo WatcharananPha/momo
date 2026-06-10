@@ -141,18 +141,24 @@ class PointService:
 
     @staticmethod
     async def get_balance(user_id: str) -> dict[str, Any]:
-        balance = await db.userpointbalance.find_unique(where={"userId": user_id})
+        user = await db.user.find_unique(
+            where={"id": user_id},
+            include={"pointBalance": True, "membership": True}
+        )
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+            )
+            
+        balance = user.pointBalance
         if not balance:
-            user = await db.user.find_unique(where={"id": user_id})
-            if not user:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
-                )
             return {
                 "user_id": user_id,
                 "total_points": 0,
                 "available_points": 0,
                 "lifetime_points": 0,
+                "referral_code": user.referralCode,
+                "tier": user.membership.tier if user.membership else "SILVER"
             }
 
         return {
@@ -161,4 +167,6 @@ class PointService:
             "available_points": balance.availablePoints,
             "lifetime_points": balance.lifetimePoints,
             "updated_at": balance.updatedAt,
+            "referral_code": user.referralCode,
+            "tier": user.membership.tier if user.membership else "SILVER"
         }
