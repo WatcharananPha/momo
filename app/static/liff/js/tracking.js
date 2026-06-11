@@ -112,6 +112,20 @@ window.initTrackingMap = function() {
             calculateAndDisplayRoute(currentMaidPos, customerPos);
         }
 
+            // Bind bottom-sheet CTA to focus map on maid
+            try {
+                const cta = document.getElementById('pickup-cta');
+                if (cta) {
+                    cta.addEventListener('click', () => {
+                        if (maidMarker && map) {
+                            const pos = maidMarker.getPosition();
+                            map.panTo(pos);
+                            map.setZoom(17);
+                        }
+                    });
+                }
+            } catch (e) { console.warn('Failed to bind CTA', e); }
+
         google.maps.event.trigger(map, 'resize');
 
     } catch (e) {
@@ -198,6 +212,12 @@ function calculateAndDisplayRoute(maidPos, destPos) {
             }
             etaEl.innerHTML = `ETA: <span class="font-black">${etaText}</span>`;
             
+                // Update distance in bottom-sheet if present
+                const distEl = document.getElementById('distance-display');
+                if (distEl) distEl.textContent = distanceText;
+                // Also update small ETA line in bottom sheet
+                const etaSmall = document.getElementById('eta-display-small');
+                if (etaSmall) etaSmall.textContent = `ETA: ${etaText}`;
         } else {
             console.warn("[Routing] Directions request failed:", status);
         }
@@ -266,6 +286,9 @@ async function updateMaidLocation() {
 
             if (data.currentLat && data.currentLng && map && maidMarker) {
                 const newPos = { lat: data.currentLat, lng: data.currentLng };
+                // Update bottom-sheet distance placeholder while we compute route
+                const distEl = document.getElementById('distance-display');
+                if (distEl) distEl.textContent = 'Calculating...';
                 
                 // Show map if it was hidden
                 const container = document.getElementById('map-container');
