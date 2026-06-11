@@ -28,11 +28,12 @@ async function initTracking() {
             if (container) container.classList.remove('hidden');
 
             // 3. Dynamic Script Injection (Handle Race Condition)
-            const script = document.getElementById('gmaps-script');
-            if (script) {
-                script.src = `https://maps.googleapis.com/maps/api/js?key=${api_key}&callback=initTrackingMap`;
-                console.log("[Runtime] Google Maps SDK script injected.");
-            }
+            const script = document.createElement('script');
+            script.src = `https://maps.googleapis.com/maps/api/js?key=${api_key}&callback=initTrackingMap`;
+            script.async = true;
+            script.defer = true;
+            document.head.appendChild(script);
+            console.log("[Runtime] Google Maps SDK script dynamically injected.");
         } else {
             console.error("[Config] MAP_API is not defined in Backend ENV.");
             showToast("Map Configuration Error", "error");
