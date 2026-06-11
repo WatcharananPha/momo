@@ -21,7 +21,6 @@ async function updateDashboardData() {
         document.getElementById('wallet-balance').textContent = (data.wallet.balance || 0).toLocaleString();
         document.getElementById('point-balance').textContent = (data.balance.availablePoints || 0).toLocaleString();
     } else {
-        // Fallback for demo/error state
         document.getElementById('wallet-balance').textContent = "0";
         document.getElementById('point-balance').textContent = "0";
     }
@@ -36,15 +35,14 @@ function startBooking(type) {
     document.getElementById('modal-service-name').textContent = i18n.t(s.nameKey);
     document.getElementById('modal-service-price').textContent = `${s.price} ${currency}`;
     
-    // Reset view
     document.getElementById('modal-initial-view').classList.remove('hidden');
     document.getElementById('modal-match-view').classList.add('hidden');
     rerollsLeft = 3;
     document.getElementById('reroll-count').textContent = rerollsLeft;
 
     const modal = document.getElementById('booking-modal');
-    modal.style.display = 'flex'; // Ensure it's visible
     modal.classList.add('open');
+    modal.classList.remove('hidden');
     document.getElementById('app-content').style.overflow = 'hidden';
 }
 
@@ -55,49 +53,33 @@ window.closeModal = function() {
     setTimeout(() => {
         modal.classList.add('hidden');
         document.getElementById('app-content').style.overflow = 'auto';
-    }, 300);
+    }, 400);
 };
-
-// Click outside to close modal
-document.getElementById('booking-modal').addEventListener('click', function(e) {
-    if (e.target === this) closeModal();
-});
 
 document.getElementById('confirm-booking-btn').onclick = async () => {
     const btn = document.getElementById('confirm-booking-btn');
     btn.disabled = true;
-    btn.innerHTML = '<div class="spinner-small mx-auto"></div> Finding Professional...';
+    btn.innerHTML = '<div class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mx-auto"></div>';
 
-    // Get current location
-    let lat = null;
-    let lng = null;
-    
+    let lat = null, lng = null;
     try {
         const pos = await new Promise((resolve, reject) => {
             navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 });
         });
         lat = pos.coords.latitude;
         lng = pos.coords.longitude;
-        console.log("[Location] User coordinates:", lat, lng);
-    } catch (e) {
-        console.warn("[Location] Could not get user location:", e.message);
-        // We proceed with nulls, backend handles it
-    }
+    } catch (e) { console.warn("Location skipped"); }
 
     try {
         if (!accessToken) throw new Error("Not authenticated");
-        
         const res = await fetch(`${API_BASE}/bookings/confirm`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
             body: JSON.stringify({ 
-                type: currentService, 
-                party_size: 1, 
+                type: currentService, party_size: 1, 
                 scheduled_at: new Date(Date.now() + 3600000).toISOString(), 
-                location_name: "My Home",
-                customer_lat: lat,
-                customer_lng: lng,
-                notes: "Please be on time."
+                location_name: "Current Location",
+                customer_lat: lat, customer_lng: lng
             })
         });
         
@@ -106,128 +88,103 @@ document.getElementById('confirm-booking-btn').onclick = async () => {
             showMatch(currentBooking.maid);
         } else {
             const err = await res.json();
-            throw new Error(err.detail || "API call failed");
+            throw new Error(err.detail || "Matching failed");
         }
     } catch (e) {
-        console.error("Booking Match Error:", e);
         showToast(e.message, "error");
     } finally {
         btn.disabled = false;
-        btn.textContent = i18n.t('find_professional');
+        btn.textContent = "Confirm Matching";
     }
 };
 
 function showMatch(maid) {
     document.getElementById('modal-initial-view').classList.add('hidden');
     document.getElementById('modal-match-view').classList.remove('hidden');
-    
-    document.getElementById('matched-maid-name').textContent = maid.fullName || maid.full_name;
-    document.getElementById('matched-maid-tier').textContent = `${maid.tier} Level`;
-    if (maid.profilePictureUrl) {
-        document.getElementById('matched-maid-pic').src = maid.profilePictureUrl;
-    }
+    document.getElementById('matched-maid-name').textContent = maid.fullName || "Certified Pro";
+    document.getElementById('matched-maid-tier').textContent = `${maid.tier} Member`;
+    if (maid.profilePictureUrl) document.getElementById('matched-maid-pic').src = maid.profilePictureUrl;
 }
 
 document.getElementById('reroll-btn').onclick = async () => {
     if (!currentBooking || rerollsLeft <= 0) return;
-    
     const btn = document.getElementById('reroll-btn');
     btn.disabled = true;
-    btn.innerHTML = '<div class="spinner-small mx-auto"></div> Re-rolling...';
-
     try {
         const res = await fetch(`${API_BASE}/bookings/${currentBooking.id}/reroll`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${accessToken}` }
         });
-
         if (res.ok) {
             currentBooking = await res.json();
             rerollsLeft--;
             document.getElementById('reroll-count').textContent = rerollsLeft;
-            if (rerollsLeft <= 0) btn.classList.add('opacity-50', 'cursor-not-allowed');
             showMatch(currentBooking.maid);
-        } else {
-            const err = await res.json();
-            throw new Error(err.detail || "Reroll failed");
         }
-    } catch (e) {
-        showToast(e.message, "error");
-    } finally {
-        btn.disabled = false;
-        btn.innerHTML = `<span data-i18n="reroll">${i18n.t('reroll')}</span> (<span id="reroll-count">${rerollsLeft}</span>)`;
-    }
+    } finally { btn.disabled = false; }
 };
 
 document.getElementById('final-confirm-btn').onclick = async () => {
     if (!currentBooking) return;
-
     const btn = document.getElementById('final-confirm-btn');
     btn.disabled = true;
-    btn.innerHTML = '<div class="spinner-small mx-auto"></div> Confirming...';
-
     try {
         const res = await fetch(`${API_BASE}/bookings/${currentBooking.id}/final-confirm`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${accessToken}` }
         });
-
         if (res.ok) {
             closeModal();
-            updateDashboardData();
-            showToast("Booking Confirmed! Your professional is on the way.", "success");
-            setTimeout(() => { location.href = '/liff/tracking'; }, 2000);
-        } else {
-            const err = await res.json();
-            throw new Error(err.detail || "Confirmation failed");
+            showToast("Success! Tracking started.", "success");
+            setTimeout(() => { location.href = '/liff/tracking'; }, 1500);
         }
-    } catch (e) {
-        showToast(e.message, "error");
-    } finally {
-        btn.disabled = false;
-        btn.textContent = i18n.t('confirm_booking');
+    } finally { btn.disabled = false; }
+};
+
+window.openWheel = function() {
+    const el = document.getElementById('wheel-modal');
+    if (el) {
+        el.classList.remove('hidden');
+        el.classList.add('flex');
     }
 };
 
-function openWheel() {
-    document.getElementById('wheel-modal').classList.remove('hidden');
-    document.getElementById('wheel-modal').classList.add('flex');
-}
+window.closeWheel = function() {
+    const el = document.getElementById('wheel-modal');
+    if (el) {
+        el.classList.add('hidden');
+        el.classList.remove('flex');
+    }
+};
 
-function closeWheel() {
-    document.getElementById('wheel-modal').classList.add('hidden');
-    document.getElementById('wheel-modal').classList.remove('flex');
-}
-
-function spinWheel() {
+window.spinWheel = function() {
     const btn = document.getElementById('spin-btn');
     const wheel = document.getElementById('wheel-canvas');
+    if (!btn || !wheel) return;
     btn.disabled = true;
-    
-    const randomDeg = Math.floor(Math.random() * 360) + 1440; 
-    wheel.style.transform = `rotate(${randomDeg}deg)`;
-    
+    const deg = Math.floor(Math.random() * 360) + 1800; 
+    wheel.style.transform = `rotate(${deg}deg)`;
     setTimeout(() => {
-        showToast("Congratulations! You won 10 บาท!", "success");
+        showToast("Bonus Points Added! ✨", "success");
         btn.disabled = false;
-        wheel.style.transition = 'none';
-        wheel.style.transform = `rotate(${randomDeg % 360}deg)`;
-        setTimeout(() => wheel.style.transition = 'transform 4s cubic-bezier(0.15, 0, 0.15, 1)', 50);
         closeWheel();
-    }, 4500);
-}
+    }, 3500);
+};
 
 function openPackages() {
-    document.getElementById('packages-modal').classList.remove('hidden');
-    document.getElementById('packages-modal').classList.add('flex');
+    const el = document.getElementById('packages-modal');
+    if (el) {
+        el.classList.remove('hidden');
+        el.classList.add('flex');
+    }
 }
 
 function closePackages() {
-    document.getElementById('packages-modal').classList.add('hidden');
-    document.getElementById('packages-modal').classList.remove('flex');
+    const el = document.getElementById('packages-modal');
+    if (el) {
+        el.classList.add('hidden');
+        el.classList.remove('flex');
+    }
 }
 
-// Start
-document.addEventListener("DOMContentLoaded", () => {
-    initHome();
-});
+document.addEventListener("DOMContentLoaded", initHome);

@@ -19,15 +19,6 @@ let animationFrameId = null;
 async function initTracking() {
     console.info("[Init] Starting Tracking Bootstrap...");
     await initCoreLiff(true);
-    
-    // Check key from meta
-    const meta = document.querySelector('meta[name="maps-api-key"]');
-    if (meta && meta.content && meta.content !== '__MAP_API__' && meta.content !== '') {
-        console.log("[Config] Maps API Key detected in meta.");
-    } else {
-        console.warn("[Config] Maps API Key missing in meta tag.");
-    }
-
     await fetchActiveBooking();
 }
 
@@ -42,10 +33,6 @@ window.initTrackingMap = function() {
         const container = document.getElementById('map-container');
         if (!container) return;
 
-        // Force show container
-        container.classList.remove('hidden');
-        container.style.display = 'block';
-
         const mapElement = document.getElementById("map");
         if (!mapElement) throw new Error("DOM element #map not found.");
         
@@ -55,7 +42,7 @@ window.initTrackingMap = function() {
             zoom: 16,
             center: centerPos,
             disableDefaultUI: true,
-            padding: { bottom: 280 }, // Shift center up to account for bottom sheet
+            padding: { bottom: 300 }, // Shift center up significantly
             styles: [
                 { "featureType": "poi", "stylers": [{ "visibility": "off" }] },
                 { "featureType": "transit", "stylers": [{ "visibility": "off" }] }
@@ -68,10 +55,9 @@ window.initTrackingMap = function() {
             map: map,
             suppressMarkers: true, 
             polylineOptions: {
-                
                 strokeColor: '#046c4e', 
-                strokeWeight: 5,
-                strokeOpacity: 0.8
+                strokeWeight: 6,
+                strokeOpacity: 0.9
             }
         });
 
@@ -83,10 +69,10 @@ window.initTrackingMap = function() {
             visible: !!currentMaidPos,
             icon: {
                 path: 'M17.402,0H5.643C2.526,0,0,3.467,0,6.584v34.804c0,3.116,2.526,5.644,5.643,5.644h11.759c3.116,0,5.644-2.527,5.644-5.644 V6.584C23.044,3.467,20.518,0,17.402,0z M22.057,14.188v11.665l-2.729,0.351v-4.806L22.057,14.188z M20.625,10.773 c-1.016,3.9-2.219,8.51-2.219,8.51H4.638l-2.222-8.51C2.415,10.773,11.3,7.755,20.625,10.773z M3.748,21.713v4.492l-2.73-0.349 V14.502L3.748,21.713z M1.018,37.938V27.579l2.73,0.343v8.196L1.018,37.938z M2.575,40.882l2.218-3.336h13.771l2.219,3.336H2.575z M19.328,35.805v-7.872l2.729-0.355v10.048L19.328,35.805z',
-                scale: 0.8,
+                scale: 0.9,
                 fillColor: "#059669",
                 fillOpacity: 1,
-                strokeWeight: 1.5,
+                strokeWeight: 2,
                 strokeColor: "#ffffff",
                 rotation: 0,
                 anchor: new google.maps.Point(11, 23)
@@ -103,7 +89,7 @@ window.initTrackingMap = function() {
             };
         }
 
-        console.log("[SDK] Map initialized with padding.");
+        console.log("[SDK] Map initialized with premium padding.");
         
         if (currentMaidPos && customerPos) {
             calculateAndDisplayRoute(currentMaidPos, customerPos);
@@ -140,7 +126,7 @@ async function fetchActiveBooking() {
     } catch (e) {
         console.error("[Data] Fetch booking error:", e);
     } finally {
-        setTimeout(hideLoading, 500);
+        setTimeout(hideLoading, 600);
     }
 }
 
@@ -202,6 +188,8 @@ function smoothMoveMarker(marker, startPos, endPos, durationMs = 2000) {
         const currentPosLatLng = new google.maps.LatLng(currentLat, currentLng);
 
         marker.setPosition(currentPosLatLng);
+        
+        // Pan map smoothly to follow marker
         map.panTo(currentPosLatLng);
 
         if (progress < 1) animationFrameId = requestAnimationFrame(animate);
@@ -252,7 +240,7 @@ function updateTrackingUI(booking) {
     const stepMap = { 'CONFIRMED': 1, 'ARRIVED': 2, 'IN_PROGRESS': 3, 'COMPLETED': 4 };
     const currentStep = stepMap[status] || 1;
     
-    // Update progress steps UI (Grab Style)
+    // Update Step UI (Circles & Lines)
     for (let i = 1; i <= 4; i++) {
         const node = document.getElementById(`step-node-${i}`);
         const line = document.getElementById(`step-line-${i}`);
@@ -262,7 +250,7 @@ function updateTrackingUI(booking) {
             node.classList.remove('done', 'active', 'todo');
             if (i < currentStep) {
                 node.classList.add('done');
-                node.innerHTML = '<svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M0 11l2-2 5 5L18 3l2 2L7 18z"/></svg>';
+                node.innerHTML = '<svg class="w-5 h-5 fill-current" viewBox="0 0 20 20"><path d="M0 11l2-2 5 5L18 3l2 2L7 18z"/></svg>';
             } else if (i === currentStep) {
                 node.classList.add('active');
                 node.innerHTML = i;
@@ -272,22 +260,14 @@ function updateTrackingUI(booking) {
             }
         }
         
-        // Line fill animation
         if (line) {
-            if (i < currentStep) {
-                line.style.width = '100%';
-            } else if (i === currentStep) {
-                // If we are on this step, show a partial fill or zero depending on UX preference
-                // Standard Grab shows previous lines full, current line empty until progress starts
-                line.style.width = '0%';
-            } else {
-                line.style.width = '0%';
-            }
+            line.style.width = (i < currentStep) ? '100%' : '0%';
         }
 
         if (label) {
             label.classList.toggle('text-brand', i <= currentStep);
             label.classList.toggle('text-ink-light', i > currentStep);
+            label.style.fontWeight = (i === currentStep) ? '900' : '700';
         }
     }
 
@@ -300,9 +280,8 @@ function updateTrackingUI(booking) {
     document.getElementById('status-title').textContent = titleMap[status] || 'Processing';
 
     if (booking.maid) {
-        document.getElementById('maid-name').textContent = booking.maid.fullName || "Your Professional";
+        document.getElementById('maid-name').textContent = booking.maid.fullName || "Professional Assigned";
         document.getElementById('maid-tier').textContent = `• ${booking.maid.tier || 'PRO'} Tier`;
-        document.getElementById('maid-rating').textContent = (booking.rating || 4.9).toFixed(1);
         if (booking.maid.profilePictureUrl) {
             document.getElementById('maid-pic').src = booking.maid.profilePictureUrl;
         }
@@ -317,9 +296,9 @@ function updateTrackingUI(booking) {
     }
 }
 
-// Draggable Bottom Sheet Logic
+// Draggable Bottom Sheet with Touch Acceleration
 let startY = 0;
-let currentY = 0;
+let currentPos = 0;
 let isDragging = false;
 
 function initDraggableSheet() {
@@ -333,27 +312,35 @@ function initDraggableSheet() {
         startY = e.touches[0].clientY;
         isDragging = true;
         sheet.style.transition = 'none';
-    });
+        if (fab) fab.style.transition = 'none';
+    }, { passive: true });
 
     document.addEventListener('touchmove', (e) => {
         if (!isDragging) return;
-        currentY = e.touches[0].clientY;
-        const deltaY = currentY - startY;
+        const y = e.touches[0].clientY;
+        const deltaY = y - startY;
         
-        if (deltaY < 0) { // Dragging up
-            const move = Math.max(deltaY, -150);
+        if (deltaY < 0) { // Drag up
+            const move = Math.max(deltaY, -140);
+            sheet.style.transform = `translateY(${move}px)`;
+            if (fab) fab.style.transform = `translateY(${move}px)`;
+        } else if (deltaY > 0) { // Drag down
+            const move = Math.min(deltaY, 0);
             sheet.style.transform = `translateY(${move}px)`;
             if (fab) fab.style.transform = `translateY(${move}px)`;
         }
-    });
+    }, { passive: true });
 
-    document.addEventListener('touchend', () => {
+    document.addEventListener('touchend', (e) => {
         if (!isDragging) return;
         isDragging = false;
-        sheet.style.transition = 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)';
+        sheet.style.transition = 'transform 0.5s cubic-bezier(0.16, 1, 0.3, 1)';
+        if (fab) fab.style.transition = 'transform 0.5s cubic-bezier(0.16, 1, 0.3, 1)';
         
-        const deltaY = currentY - startY;
-        if (deltaY < -50) {
+        const y = e.changedTouches[0].clientY;
+        const deltaY = y - startY;
+
+        if (deltaY < -40) {
             sheet.style.transform = 'translateY(-120px)';
             if (fab) fab.style.transform = 'translateY(-120px)';
         } else {
@@ -361,6 +348,33 @@ function initDraggableSheet() {
             if (fab) fab.style.transform = 'translateY(0)';
         }
     });
+}
+
+function setRating(rating) {
+    selectedRating = rating;
+    const btns = document.querySelectorAll('#review-section button');
+    btns.forEach((btn, idx) => {
+        if (idx < rating) btn.classList.replace('bg-white/10', 'bg-white/30');
+        else if (idx < 5) btn.classList.replace('bg-white/30', 'bg-white/10');
+    });
+}
+
+async function submitReview() {
+    if (!currentBookingId) return;
+    try {
+        const res = await fetch(`${API_BASE}/reviews/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
+            body: JSON.stringify({ booking_id: currentBookingId, rating: selectedRating, comment: "Great service!" })
+        });
+        if (res.ok) {
+            showToast("Feedback sent! +10 Points earned.", "success");
+            document.getElementById('review-section').style.transform = 'translateY(100%)';
+            setTimeout(() => document.getElementById('review-section').classList.add('hidden'), 500);
+        }
+    } catch (e) {
+        showToast("Error submitting review", "error");
+    }
 }
 
 document.addEventListener("DOMContentLoaded", () => {

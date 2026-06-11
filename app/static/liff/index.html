@@ -7,23 +7,23 @@
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-    <link rel="stylesheet" href="/static/liff/css/style.css?v=1.0.7">
-    <link rel="stylesheet" href="/static/liff/css/design-system.css?v=1.0.7">
+    <link rel="stylesheet" href="/static/liff/css/style.css?v=1.0.8">
+    <link rel="stylesheet" href="/static/liff/css/design-system.css?v=1.0.8">
     <script src="/static/liff/js/i18n.js?v=1.0.2"></script>
     
     <script>
         tailwind.config = {
             theme: {
                 extend: {
-                    fontFamily: { sans: ['"Inter"', 'sans-serif'] },
+                    fontFamily: { sans: ['"Sanomat Grab TH"', '"Inter"', 'sans-serif'] },
                     colors: {
                         brand: { DEFAULT: '#046c4e', light: '#059669', dark: '#034a36', surface: '#f0fdf4' },
-                        ink: { DEFAULT: '#111827', muted: '#4b5563', light: '#9ca3af' },
-                        bg: '#f9fafb'
+                        ink: { DEFAULT: '#0a0f18', muted: '#4b5563', light: '#9ca3af' },
+                        bg: '#f8fafc'
                     },
                     boxShadow: {
                         'premium': '0 10px 15px -3px rgba(0, 0, 0, 0.04), 0 4px 6px -2px rgba(0, 0, 0, 0.02)',
-                        'xl-soft': '0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.03)'
+                        'xl-soft': '0 25px 30px -10px rgba(0, 0, 0, 0.1), 0 10px 15px -5px rgba(0, 0, 0, 0.05)'
                     }
                 }
             }
@@ -35,6 +35,12 @@
         @keyframes spin { to { transform: rotate(360deg); } }
         #app-content { opacity: 0; transition: opacity 0.6s ease; }
         #app-content.visible { opacity: 1; }
+        
+        /* Modal Transitions */
+        #booking-modal { opacity: 0; pointer-events: none; transition: opacity 0.3s ease; display: flex; }
+        #booking-modal.open { opacity: 1; pointer-events: auto; }
+        #booking-modal .modal-container { transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+        #booking-modal.open .modal-container { transform: translateY(0); }
     </style>
 </head>
 <body class="bg-bg antialiased text-ink">
@@ -45,14 +51,13 @@
         <div class="mt-6 text-white/60 text-[11px] font-black uppercase tracking-[0.3em]">Momo Care</div>
     </div>
 
-    <div id="app-content"
- class="h-full w-full overflow-y-auto pb-[120px] scroll-hide">
+    <div id="app-content" class="h-full w-full overflow-y-auto pb-[120px] scroll-hide">
         <div class="pt-[env(safe-area-inset-top,24px)]"></div>
 
         <header class="px-6 pt-6 pb-2 flex justify-between items-end">
             <div>
-                <p class="text-[14px] font-bold text-ink-muted/60 mb-0.5 tracking-tight" id="user-greeting" data-i18n="greeting_hello">Hello,</p>
-                <h1 class="text-[26px] font-black text-ink leading-none tracking-tighter" id="user-name" data-i18n="guest_user">Guest</h1>
+                <p class="text-[14px] font-bold text-ink-muted/50 mb-0.5 tracking-tight uppercase tracking-widest" id="user-greeting" data-i18n="greeting_hello">Hello,</p>
+                <h1 class="text-[28px] font-black text-ink leading-none tracking-tighter" id="user-name" data-i18n="guest_user">Guest</h1>
             </div>
             <div class="flex items-center gap-3">
                 <div class="flex bg-gray-100 rounded-xl p-1 border border-gray-200/50 text-[10px] font-black overflow-hidden shadow-inner">
@@ -68,7 +73,6 @@
             </div>
         </header>
 
-        <!-- Search / Quick Action -->
         <div class="px-6 mt-8">
             <div class="bg-white rounded-[24px] px-5 py-4 flex items-center justify-between shadow-premium border border-gray-100 cursor-pointer btn-press" onclick="location.href='/liff/search'">
                 <div class="flex items-center gap-4">
@@ -78,7 +82,6 @@
             </div>
         </div>
 
-        <!-- Horizontal Categories -->
         <div class="pl-6 mt-8 flex gap-3 overflow-x-auto scroll-hide pb-2">
             <button class="bg-brand text-white px-6 py-3 rounded-2xl text-[14px] font-black whitespace-nowrap shadow-lg shadow-brand/20 btn-press">
                 <span data-i18n="cleaning">Cleaning</span>
@@ -88,7 +91,6 @@
             <button class="bg-white text-ink-muted border border-gray-100 px-6 py-3 rounded-2xl text-[14px] font-bold whitespace-nowrap shadow-premium btn-press" onclick="startBooking('REPAIR')" data-i18n="repair">Repair</button>
         </div>
 
-        <!-- Promos -->
         <section class="px-6 mt-10">
             <div class="flex justify-between items-center mb-5">
                 <h3 class="text-[18px] font-black tracking-tight" data-i18n="exclusive_offers">Member Privileges</h3>
@@ -119,7 +121,6 @@
             </div>
         </section>
 
-        <!-- Wallet Card (Refined) -->
         <section class="px-6 mt-10">
             <div class="bg-white rounded-[32px] p-6 shadow-premium border border-gray-100 flex flex-col min-h-[160px] relative overflow-hidden">
                 <div class="flex justify-between items-start mb-6">
@@ -150,7 +151,6 @@
             </div>
         </section>
 
-        <!-- Services (Senior Component) -->
         <section class="px-6 mt-10">
             <h3 class="text-[18px] font-black tracking-tight mb-5">Professional Services</h3>
             <div class="flex flex-col gap-4">
@@ -170,23 +170,11 @@
                         </div>
                     </div>
                 </div>
-                <!-- Duplicate for style check -->
-                <div class="bg-white rounded-[28px] overflow-hidden shadow-premium border border-gray-100 flex p-4 gap-5 relative btn-press cursor-pointer opacity-70" onclick="showToast(i18n.t('coming_soon'), 'info')">
-                    <div class="w-24 h-24 bg-gray-50 rounded-[20px] flex items-center justify-center shrink-0 border border-gray-100">
-                        <svg class="w-10 h-10 text-ink-light" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
-                    </div>
-                    <div class="flex flex-col justify-between flex-1 py-1 text-ink-muted">
-                        <div>
-                            <h3 class="text-[17px] font-black leading-tight mb-1">Deep Cleaning</h3>
-                            <p class="text-[13px] font-medium">Coming soon</p>
-                        </div>
-                    </div>
-                </div>
             </div>
         </section>
     </div>
 
-    <!-- Navigation (Unified) -->
+    <!-- Navigation -->
     <nav class="fixed bottom-0 w-full max-w-[430px] left-1/2 -translate-x-1/2 bg-white/80 backdrop-blur-xl border-t border-gray-100 flex justify-around items-center px-6 py-5 z-[200] pb-[calc(1.2rem+env(safe-area-inset-bottom))] shadow-xl">
         <a href="/liff/index" class="text-brand transform scale-110"><svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"></path></svg></a>
         <a href="/liff/wallet" class="text-ink-light hover:text-brand transition-colors"><svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg></a>
@@ -194,9 +182,9 @@
         <a href="/liff/profile" class="text-ink-light hover:text-brand transition-colors"><svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></a>
     </nav>
 
-    <!-- Modals (Grab/Uber Standard) -->
+    <!-- Modals -->
     <div id="booking-modal" class="fixed inset-0 bg-ink/60 backdrop-blur-md z-[500] hidden items-end" onclick="if(event.target===this) closeModal()">
-        <div class="bg-white w-full max-w-[430px] rounded-t-[40px] p-8 pb-12 animate-slide-up relative mx-auto shadow-2xl">
+        <div class="modal-container bg-white w-full max-w-[430px] rounded-t-[40px] p-8 pb-12 relative mx-auto shadow-2xl">
             <div class="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-8"></div>
             
             <div id="modal-initial-view">
@@ -238,9 +226,23 @@
             <button class="w-full text-center text-[14px] font-black text-ink-light py-5 mt-2 uppercase tracking-widest" onclick="closeModal()" data-i18n="cancel">Dismiss</button>
         </div>
     </div>
+
+    <!-- Daily Wheel Modal (Added back) -->
+    <div id="wheel-modal" class="fixed inset-0 bg-ink/80 backdrop-blur-md z-[600] hidden items-center justify-center p-6" onclick="if(event.target===this) closeWheel()">
+        <div class="bg-white rounded-[40px] w-full max-w-[360px] p-10 text-center relative overflow-hidden shadow-2xl">
+            <span class="text-[11px] font-black text-brand uppercase tracking-[0.3em] mb-2 block">Daily Bonus</span>
+            <h3 class="text-[28px] font-black text-ink leading-tight mb-8" data-i18n="lucky_spin">Lucky Spin</h3>
+            <div id="wheel-canvas" class="w-60 h-64 mx-auto rounded-full border-[12px] border-brand/10 mb-10 transition-transform duration-[3s] cubic-bezier(0.15, 0, 0.15, 1) flex items-center justify-center bg-brand-surface text-brand font-black text-4xl shadow-inner relative">
+                <div class="absolute inset-0 rounded-full border-4 border-white/50"></div>
+                <span class="relative z-10">MOMO</span>
+            </div>
+            <button id="spin-btn" class="w-full bg-brand text-white font-black py-5 rounded-[24px] shadow-xl shadow-brand/30 uppercase tracking-widest btn-press" onclick="spinWheel()" data-i18n="spin">SPIN NOW</button>
+            <button class="w-full text-ink-light font-black text-[12px] mt-6 uppercase tracking-widest" onclick="closeWheel()">Maybe later</button>
+        </div>
+    </div>
 </div>
 
 <script src="/static/liff/js/app.js?v=1.0.6"></script>
-<script src="/static/liff/js/home.js?v=1.0.6"></script>
+<script src="/static/liff/js/home.js?v=1.0.7"></script>
 </body>
 </html>
