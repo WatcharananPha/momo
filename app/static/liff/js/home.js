@@ -66,6 +66,22 @@ document.getElementById('confirm-booking-btn').onclick = async () => {
     btn.disabled = true;
     btn.innerHTML = '<div class="spinner-small mx-auto"></div> Finding Professional...';
 
+    // Get current location
+    let lat = null;
+    let lng = null;
+    
+    try {
+        const pos = await new Promise((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 });
+        });
+        lat = pos.coords.latitude;
+        lng = pos.coords.longitude;
+        console.log("[Location] User coordinates:", lat, lng);
+    } catch (e) {
+        console.warn("[Location] Could not get user location:", e.message);
+        // We proceed with nulls, backend handles it
+    }
+
     try {
         if (!accessToken) throw new Error("Not authenticated");
         
@@ -77,6 +93,8 @@ document.getElementById('confirm-booking-btn').onclick = async () => {
                 party_size: 1, 
                 scheduled_at: new Date(Date.now() + 3600000).toISOString(), 
                 location_name: "My Home",
+                customer_lat: lat,
+                customer_lng: lng,
                 notes: "Please be on time."
             })
         });

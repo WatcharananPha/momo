@@ -75,11 +75,15 @@ window.initTrackingMap = function() {
     console.info("[SDK] Google Maps Callback Fired.");
     
     // Use customer position or maid position as center
-    const centerPos = customerPos || currentMaidPos;
+    const centerPos = customerPos || currentMaidPos || { lat: 13.7563, lng: 100.5018 };
     
     try {
         const container = document.getElementById('map-container');
         if (!container) return;
+
+        // Force show container for user feedback
+        container.classList.remove('hidden');
+        container.style.display = 'block';
 
         const mapElement = document.getElementById("map");
         if (!mapElement) throw new Error("DOM element #map not found.");
@@ -88,23 +92,15 @@ window.initTrackingMap = function() {
             mapElement.style.height = "256px"; 
         }
 
-        // If no position yet, don't show map container but initialize map in background if possible
-        // or just wait. Here we initialize with a hidden state if no centerPos.
-        
         map = new google.maps.Map(mapElement, {
             zoom: 15,
-            center: centerPos || { lat: 13.7563, lng: 100.5018 }, // Final fallback but we keep container hidden
+            center: centerPos,
             disableDefaultUI: true,
             styles: [
                 { "featureType": "poi", "stylers": [{ "visibility": "off" }] },
                 { "featureType": "transit", "stylers": [{ "visibility": "off" }] }
             ]
         });
-
-        if (centerPos) {
-            container.classList.remove('hidden');
-            container.style.display = 'block';
-        }
 
         // Setup Routing Services
         directionsService = new google.maps.DirectionsService();
