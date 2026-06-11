@@ -52,6 +52,7 @@ function closeModal() {
     const modal = document.getElementById('booking-modal');
     modal.classList.remove('open');
     setTimeout(() => {
+        modal.classList.add('hidden');
         document.getElementById('app-content').style.overflow = 'auto';
     }, 300);
 }

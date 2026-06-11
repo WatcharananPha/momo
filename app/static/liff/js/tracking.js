@@ -252,19 +252,33 @@ function updateTrackingUI(booking) {
     const stepMap = { 'CONFIRMED': 1, 'ARRIVED': 2, 'IN_PROGRESS': 3, 'COMPLETED': 4 };
     const currentStep = stepMap[status] || 1;
     
-    // Progress Bar
-    const progress = ((currentStep - 1) / 3) * 100;
-    document.getElementById('tracker-progress').style.width = `${progress}%`;
-
-    // Nodes
+    // Update progress steps UI (Grab Style)
     for (let i = 1; i <= 4; i++) {
-        const node = document.getElementById(`step-${i}`);
-        if (!node) continue;
-        node.classList.remove('bg-brand', 'border-brand-surface', 'border-slate-100');
-        if (i <= currentStep) {
-            node.classList.add('bg-brand', 'border-brand-surface');
-        } else {
-            node.classList.add('bg-white', 'border-slate-100');
+        const node = document.getElementById(`step-node-${i}`);
+        const line = document.getElementById(`step-line-${i}`);
+        const label = document.getElementById(`label-${i}`);
+        
+        if (node) {
+            node.classList.remove('done', 'active', 'todo');
+            if (i < currentStep) {
+                node.classList.add('done');
+                node.innerHTML = '<svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M0 11l2-2 5 5L18 3l2 2L7 18z"/></svg>';
+            } else if (i === currentStep) {
+                node.classList.add('active');
+                node.innerHTML = i;
+            } else {
+                node.classList.add('todo');
+                node.innerHTML = i;
+            }
+        }
+        
+        if (line) {
+            line.style.width = (i < currentStep) ? '100%' : (i === currentStep ? '30%' : '0%');
+        }
+
+        if (label) {
+            label.classList.toggle('text-brand', i <= currentStep);
+            label.classList.toggle('text-ink-light', i > currentStep);
         }
     }
 
@@ -279,7 +293,7 @@ function updateTrackingUI(booking) {
     if (booking.maid) {
         document.getElementById('maid-name').textContent = booking.maid.fullName || "Your Professional";
         document.getElementById('maid-tier').textContent = `• ${booking.maid.tier || 'PRO'} Tier`;
-        document.getElementById('maid-rating').textContent = (booking.maid.rating || 4.9).toFixed(1);
+        document.getElementById('maid-rating').textContent = (booking.rating || 4.9).toFixed(1);
         if (booking.maid.profilePictureUrl) {
             document.getElementById('maid-pic').src = booking.maid.profilePictureUrl;
         }
@@ -294,33 +308,53 @@ function updateTrackingUI(booking) {
     }
 }
 
-function setRating(rating) {
-    selectedRating = rating;
-    const btns = document.querySelectorAll('#review-section button');
-    btns.forEach((btn, idx) => {
-        if (idx < rating) btn.classList.replace('bg-white/10', 'bg-white/30');
-        else if (idx < 5) btn.classList.replace('bg-white/30', 'bg-white/10');
-    });
-}
+// Draggable Bottom Sheet Logic
+let startY = 0;
+let currentY = 0;
+let isDragging = false;
 
-async function submitReview() {
-    if (!currentBookingId) return;
-    try {
-        const res = await fetch(`${API_BASE}/reviews/`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
-            body: JSON.stringify({ booking_id: currentBookingId, rating: selectedRating, comment: "Great service!" })
-        });
-        if (res.ok) {
-            showToast("Review submitted! +10 Points.", "success");
-            document.getElementById('review-section').style.transform = 'translateY(100%)';
-            setTimeout(() => document.getElementById('review-section').classList.add('hidden'), 500);
+function initDraggableSheet() {
+    const sheet = document.getElementById('bottom-sheet');
+    const handle = document.getElementById('drag-handle');
+    const fab = document.getElementById('fab-container');
+
+    if (!sheet || !handle) return;
+
+    handle.addEventListener('touchstart', (e) => {
+        startY = e.touches[0].clientY;
+        isDragging = true;
+        sheet.style.transition = 'none';
+    });
+
+    document.addEventListener('touchmove', (e) => {
+        if (!isDragging) return;
+        currentY = e.touches[0].clientY;
+        const deltaY = currentY - startY;
+        
+        if (deltaY < 0) { // Dragging up
+            const move = Math.max(deltaY, -150);
+            sheet.style.transform = `translateY(${move}px)`;
+            if (fab) fab.style.transform = `translateY(${move}px)`;
         }
-    } catch (e) {
-        showToast("Error submitting review", "error");
-    }
+    });
+
+    document.addEventListener('touchend', () => {
+        if (!isDragging) return;
+        isDragging = false;
+        sheet.style.transition = 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)';
+        
+        const deltaY = currentY - startY;
+        if (deltaY < -50) {
+            sheet.style.transform = 'translateY(-120px)';
+            if (fab) fab.style.transform = 'translateY(-120px)';
+        } else {
+            sheet.style.transform = 'translateY(0)';
+            if (fab) fab.style.transform = 'translateY(0)';
+        }
+    });
 }
 
 document.addEventListener("DOMContentLoaded", () => {
     initTracking();
+    initDraggableSheet();
 });
