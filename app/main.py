@@ -9,10 +9,16 @@ from app.core.database import connect_db, disconnect_db
 from app.api.v1.api import api_router
 
 
+print(f"[BOOT] Starting Momo API...")
+print(f"[BOOT] DATABASE_URL present: {bool(settings.DATABASE_URL)}")
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await connect_db()
+    print("[BOOT] Lifespan starting...")
+    connected = await connect_db()
+    print(f"[BOOT] DB Connection result: {connected}")
     yield
+    print("[BOOT] Lifespan shutting down...")
     await disconnect_db()
 
 
