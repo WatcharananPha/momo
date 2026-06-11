@@ -17,7 +17,9 @@ class PointBalanceResponse(BaseModel):
     total_points: int
     available_points: int
     lifetime_points: int
-    updated_at: datetime
+    referral_code: Optional[str] = None
+    tier: Optional[str] = "SILVER"
+    updated_at: Optional[datetime] = None
 
 class PointTransactionResponse(BaseModel):
     model_config = ConfigDict(
