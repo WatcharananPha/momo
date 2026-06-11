@@ -4,10 +4,16 @@ let map = null;
 let maidMarker = null;
 let trackingInterval = null;
 
+// Routing & Animation variables
+let directionsService = null;
+let directionsRenderer = null;
+let lastRouteTime = 0;
+let currentMaidPos = null;
+let customerPos = { lat: 13.7563, lng: 100.5018 }; // Default. In real app, fetch from booking location.
+let animationFrameId = null;
+
 /**
  * Senior Dev Insights: Bootstrap sequence and Lifecycle management.
- * The Map UI failure was likely due to the logic gate in startLiveTracking 
- * which only unhides the container if a booking is in CONFIRMED/ARRIVED state.
  */
 
 async function initTracking() {
@@ -28,22 +34,26 @@ async function initTracking() {
         console.error("[Config] Backend fetch failed for MAP_API:", e);
     }
 
-    console.log("[Config] Maps API Key received:", api_key ? "VALID_KEY" : "MISSING");
+    // Temporary Fallback (only for local development/demo)
+    if (!api_key) {
+        api_key = "AIzaSyDoftAhC0pHFlx-rfmkrb8cuBwycJipYrc"; 
+    }
+
+    console.log("[Config] Maps API Key configured.");
 
     if (api_key) {
-        // 2. Unhide container immediately for debugging/UX
         const container = document.getElementById('map-container');
         if (container) container.classList.remove('hidden');
 
-        // 3. Dynamic Script Injection
+        // 3. Dynamic Script Injection (with geometry library for rotation math)
         const script = document.createElement('script');
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${api_key}&callback=initTrackingMap`;
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${api_key}&libraries=geometry&callback=initTrackingMap`;
         script.async = true;
         script.defer = true;
         document.head.appendChild(script);
         console.log("[Runtime] Google Maps SDK script dynamically injected.");
     } else {
-        console.error("[Config] MAP_API is missing. Please configure it in Railway Variables.");
+        console.error("[Config] MAP_API is missing.");
         showToast("Map Configuration Error", "error");
     }
 
@@ -53,23 +63,20 @@ async function initTracking() {
 // Global Callback for Google Maps SDK
 window.initTrackingMap = function() {
     console.info("[SDK] Google Maps Callback Fired.");
-    const defaultPos = { lat: 13.7563, lng: 100.5018 }; // Bangkok Default
+    const defaultPos = { lat: 13.7563, lng: 100.5018 };
     
     try {
         const container = document.getElementById('map-container');
         if (container) {
             container.classList.remove('hidden');
-            container.style.display = 'block'; // Force display just in case
-            console.log("[UI] Map container unhidden. Dimensions:", container.offsetWidth, "x", container.offsetHeight);
+            container.style.display = 'block'; 
         }
 
         const mapElement = document.getElementById("map");
         if (!mapElement) throw new Error("DOM element #map not found.");
 
-        // Ensure map element has explicit height if Tailwind failed
         if (mapElement.offsetHeight === 0) {
-            mapElement.style.height = "256px"; // h-64 equivalent
-            console.warn("[UI] Forced explicit height on #map element.");
+            mapElement.style.height = "256px"; 
         }
 
         map = new google.maps.Map(mapElement, {
@@ -82,26 +89,46 @@ window.initTrackingMap = function() {
             ]
         });
 
+        // Setup Routing Services
+        directionsService = new google.maps.DirectionsService();
+        directionsRenderer = new google.maps.DirectionsRenderer({
+            map: map,
+            suppressMarkers: true, // We draw our own animated marker
+            polylineOptions: {
+                strokeColor: '#046c4e', 
+                strokeWeight: 4,
+                strokeOpacity: 0.8
+            }
+        });
+
+        // Animated Marker using SVG path for easy rotation
         maidMarker = new google.maps.Marker({
             position: defaultPos,
             map: map,
             title: "Maid Location",
             icon: {
-                url: "https://img.icons8.com/color/48/000000/marker.png",
-                scaledSize: new google.maps.Size(40, 40)
+                path: 'M17.402,0H5.643C2.526,0,0,3.467,0,6.584v34.804c0,3.116,2.526,5.644,5.643,5.644h11.759c3.116,0,5.644-2.527,5.644-5.644 V6.584C23.044,3.467,20.518,0,17.402,0z M22.057,14.188v11.665l-2.729,0.351v-4.806L22.057,14.188z M20.625,10.773 c-1.016,3.9-2.219,8.51-2.219,8.51H4.638l-2.222-8.51C2.415,10.773,11.3,7.755,20.625,10.773z M3.748,21.713v4.492l-2.73-0.349 V14.502L3.748,21.713z M1.018,37.938V27.579l2.73,0.343v8.196L1.018,37.938z M2.575,40.882l2.218-3.336h13.771l2.219,3.336H2.575z M19.328,35.805v-7.872l2.729-0.355v10.048L19.328,35.805z',
+                scale: 0.7,
+                fillColor: "#059669",
+                fillOpacity: 1,
+                strokeWeight: 1,
+                strokeColor: "#ffffff",
+                rotation: 0,
+                anchor: new google.maps.Point(11, 23)
             }
         });
-        console.log("[SDK] Map and Marker initialized successfully.");
         
-        // Force a resize event to ensure tiles render if container was hidden
+        currentMaidPos = defaultPos;
+        console.log("[SDK] Map, Routing, and Animated Marker initialized.");
+        
         google.maps.event.trigger(map, 'resize');
-        map.setCenter(defaultPos);
 
     } catch (e) {
         console.error("[SDK] Render Error:", e);
     }
 };
 
+// ... (fetchActiveBooking remains the same)
 async function fetchActiveBooking() {
     try {
         const res = await fetch(`${API_BASE}/bookings/me`, {
@@ -130,6 +157,7 @@ async function fetchActiveBooking() {
     }
 }
 
+
 function startLiveTracking() {
     console.info("[Tracking] Starting Real-time Polling...");
     if (trackingInterval) clearInterval(trackingInterval);
@@ -137,6 +165,94 @@ function startLiveTracking() {
     // Initial fetch and then poll every 10s
     updateMaidLocation();
     trackingInterval = setInterval(updateMaidLocation, 10000);
+}
+
+// Route Calculation (Throttled for Cost Optimization)
+function calculateAndDisplayRoute(maidPos, destPos) {
+    if (!directionsService || !directionsRenderer) return;
+
+    // Throttle route calculation to once every 3 minutes (180000ms)
+    const now = Date.now();
+    if (now - lastRouteTime < 180000 && lastRouteTime !== 0) return;
+    lastRouteTime = now;
+
+    const request = {
+        origin: maidPos,
+        destination: destPos,
+        travelMode: google.maps.TravelMode.DRIVING
+    };
+
+    directionsService.route(request, (response, status) => {
+        if (status === 'OK') {
+            directionsRenderer.setDirections(response);
+            
+            // Extract ETA & Distance
+            const leg = response.routes[0].legs[0];
+            const etaText = leg.duration.text;
+            const distanceText = leg.distance.text;
+            
+            console.log(`[ETA Update] Arriving in ${etaText} (${distanceText})`);
+            
+            // Update UI ETA (Create element if it doesn't exist)
+            let etaEl = document.getElementById('eta-display');
+            if (!etaEl) {
+                etaEl = document.createElement('div');
+                etaEl.id = 'eta-display';
+                etaEl.className = 'absolute top-4 right-4 bg-brand text-white px-4 py-2 rounded-xl font-bold shadow-lg text-[13px] z-10 animate-fade-in';
+                document.getElementById('map-container').appendChild(etaEl);
+            }
+            etaEl.innerHTML = `ETA: <span class="font-black">${etaText}</span>`;
+            
+        } else {
+            console.warn("[Routing] Directions request failed:", status);
+        }
+    });
+}
+
+// Smooth Marker Animation (Lerp)
+function smoothMoveMarker(marker, startPos, endPos, durationMs = 2000) {
+    if (!google.maps.geometry) {
+        marker.setPosition(endPos);
+        return;
+    }
+
+    const startTime = performance.now();
+    const startLatLng = new google.maps.LatLng(startPos.lat, startPos.lng);
+    const endLatLng = new google.maps.LatLng(endPos.lat, endPos.lng);
+    
+    // Calculate Heading for rotation
+    const heading = google.maps.geometry.spherical.computeHeading(startLatLng, endLatLng);
+    
+    // Only update rotation if there is significant movement
+    if (google.maps.geometry.spherical.computeDistanceBetween(startLatLng, endLatLng) > 5) {
+        const icon = marker.getIcon();
+        icon.rotation = heading;
+        marker.setIcon(icon);
+    }
+
+    function animate(currentTime) {
+        const elapsedTime = currentTime - startTime;
+        let progress = elapsedTime / durationMs;
+        if (progress > 1) progress = 1;
+
+        const currentLat = startPos.lat + (endPos.lat - startPos.lat) * progress;
+        const currentLng = startPos.lng + (endPos.lng - startPos.lng) * progress;
+        const currentPosLatLng = new google.maps.LatLng(currentLat, currentLng);
+
+        marker.setPosition(currentPosLatLng);
+        
+        // Pan map smoothly to follow marker
+        map.panTo(currentPosLatLng);
+
+        if (progress < 1) {
+            animationFrameId = requestAnimationFrame(animate);
+        } else {
+            currentMaidPos = endPos; // Sync state
+        }
+    }
+
+    if (animationFrameId) cancelAnimationFrame(animationFrameId);
+    animationFrameId = requestAnimationFrame(animate);
 }
 
 async function updateMaidLocation() {
@@ -148,10 +264,15 @@ async function updateMaidLocation() {
         if (res.ok) {
             const data = await res.json();
             if (data.currentLat && data.currentLng && map && maidMarker) {
-                const pos = { lat: data.currentLat, lng: data.currentLng };
-                maidMarker.setPosition(pos);
-                map.panTo(pos);
-                console.log("[Tracking] UI Synced:", pos.lat, pos.lng);
+                const newPos = { lat: data.currentLat, lng: data.currentLng };
+                
+                // 1. Smoothly animate marker to new position
+                smoothMoveMarker(maidMarker, currentMaidPos, newPos);
+                
+                // 2. Recalculate route and ETA (throttled)
+                calculateAndDisplayRoute(newPos, customerPos);
+                
+                console.log("[Tracking] Data Synced:", newPos.lat, newPos.lng);
             }
             
             if (data.status === 'COMPLETED' || data.status === 'CANCELLED') {
@@ -164,12 +285,12 @@ async function updateMaidLocation() {
     }
 }
 
+// ... (rest of the file: stopLiveTracking, updateTrackingUI, setRating, submitReview)
 function stopLiveTracking() {
     if (trackingInterval) {
         clearInterval(trackingInterval);
         trackingInterval = null;
     }
-    // We keep the map visible even if tracking stops for UX context
 }
 
 function updateTrackingUI(booking) {
