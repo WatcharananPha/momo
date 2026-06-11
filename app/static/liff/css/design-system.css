@@ -1,0 +1,78 @@
+/* design-system.css — typographic scale, spacing, and UI polish */
+:root {
+  --font-sans: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  --fs-xs: 12px;
+  --fs-sm: 13px;
+  --fs-md: 15px;
+  --fs-lg: 16px;
+  --fs-xl: 18px;
+  --fs-2xl: 20px;
+  --fs-3xl: 24px;
+  --brand: #046c4e;
+  --ink: #111827;
+  --muted: #6b7280;
+  --surface: #f4f7f6;
+  --radius-lg: 18px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  font-family: var(--font-sans);
+  font-size: var(--fs-lg);
+  line-height: 1.45;
+  color: var(--ink);
+  background: var(--surface);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+}
+
+h1 { font-size: var(--fs-3xl); font-weight:800; margin:0 0 .25rem; line-height:1.05; }
+h2 { font-size: var(--fs-2xl); font-weight:800; margin:0; }
+h3 { font-size: var(--fs-xl); font-weight:700; margin:0; }
+p, span, a, button, input, li { font-size: var(--fs-md); }
+
+.btn-press {
+  min-height: 44px;
+  padding: .6rem 1rem;
+  border-radius: var(--radius-lg);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: var(--fs-md);
+  line-height: 1;
+}
+
+.nav { max-width: 430px; margin-left: auto; margin-right: auto; }
+
+#bottom-sheet { padding: 12px 0 16px; }
+.img-round { border-radius: 12px; object-fit: cover; }
+
+/* Tailwind bracketed class overrides — keep typographic scale balanced */
+.text-\[10px\], .text-\[11px\] { font-size: var(--fs-xs) !important; }
+.text-\[12px\] { font-size: var(--fs-sm) !important; }
+.text-\[13px\] { font-size: var(--fs-md) !important; }
+.text-\[14px\] { font-size: calc(var(--fs-md) + 1px) !important; }
+.text-\[15px\] { font-size: 15px !important; }
+.text-\[16px\] { font-size: var(--fs-lg) !important; }
+.text-\[18px\] { font-size: var(--fs-xl) !important; }
+.text-\[20px\], .text-\[22px\] { font-size: var(--fs-2xl) !important; }
+.text-\[24px\], .text-\[26px\] { font-size: var(--fs-3xl) !important; }
+.text-3xl { font-size: var(--fs-3xl) !important; }
+.text-5xl { font-size: calc(var(--fs-3xl) * 1.25) !important; }
+
+/* Bottom-sheet specific tweaks */
+#bottom-sheet h3 { font-size: var(--fs-2xl) !important; }
+#bottom-sheet p, #bottom-sheet .text-\[13px\] { font-size: var(--fs-sm) !important; }
+#bottom-sheet .bg-gray-50\/80 { background-color: rgba(249,250,251,0.95) !important; }
+
+/* Improve button tap targets and visual weight */
+button, .btn-press { -webkit-tap-highlight-color: transparent; }
+
+/* Responsive minor scale-up on larger screens */
+@media (min-width: 420px) {
+  :root { --fs-lg: 17px; --fs-3xl: 28px; }
+}
