@@ -95,17 +95,8 @@ async function initCoreLiff(requireAuth = true) {
             await loginToBackend(idToken);
             hideLoading();
         } else if (requireAuth) {
-            const intro = document.getElementById('intro-page');
-            if (intro) {
-                console.log("Showing intro page...");
-                hideLoading();
-                intro.classList.remove('hidden');
-                intro.classList.add('visible');
-                intro.style.display = 'flex';
-            } else {
-                console.log("No intro page found, redirecting to login...");
-                liff.login({ redirectUri: window.location.origin + "/liff" });
-            }
+            console.log("Not logged in, redirecting to LINE login...");
+            liff.login({ redirectUri: window.location.origin + "/liff" });
         } else {
             hideLoading();
         }
