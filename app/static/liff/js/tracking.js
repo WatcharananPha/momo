@@ -68,6 +68,7 @@ window.initTrackingMap = function() {
             map: map,
             suppressMarkers: true, 
             polylineOptions: {
+                
                 strokeColor: '#046c4e', 
                 strokeWeight: 5,
                 strokeOpacity: 0.8
