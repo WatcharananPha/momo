@@ -182,13 +182,19 @@
             el.style.color = color;
         }
     }
+    // Catch Google Maps Authentication Errors
+    window.gm_authFailure = function() {
+        updateDebug('sdk', 'Auth Failed', '#f87171');
+        console.error("Google Maps Authentication Failed. Check Referrer or Billing.");
+        showToast("Map Auth Error: Check Google Cloud Console", "error");
+    };
     </script>
 
-    <script src="/static/liff/js/app.js?v=1.0.3"></script>
-    <script src="/static/liff/js/tracking.js?v=1.0.3"></script>
+    <script src="/static/liff/js/app.js?v=1.0.4"></script>
+    <script src="/static/liff/js/tracking.js?v=1.0.4"></script>
 
     <!-- Load SDK immediately with server-injected key -->
-    <script src="https://maps.googleapis.com/maps/api/js?key=__MAP_API__&libraries=maps,marker,geometry&callback=initTrackingMap" async defer onerror="updateDebug('sdk', 'Error', '#f87171')"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=__MAP_API__&libraries=maps,marker,geometry&callback=initTrackingMap" async defer onerror="updateDebug('sdk', 'Network Error', '#f87171')"></script>
 
     </body>
     </html>
