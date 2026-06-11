@@ -6,6 +6,19 @@ let trackingInterval = null;
 
 async function initTracking() {
     await initCoreLiff(true);
+    
+    // Dynamically load Google Maps script with API Key from backend
+    try {
+        const res = await fetch(`${API_BASE}/line/config/maps`);
+        const { api_key } = await res.json();
+        if (api_key) {
+            const script = document.getElementById('gmaps-script');
+            script.src = `https://maps.googleapis.com/maps/api/js?key=${api_key}&callback=initTrackingMap`;
+        }
+    } catch (e) {
+        console.error("Failed to load Maps config", e);
+    }
+
     await fetchActiveBooking();
 }
 

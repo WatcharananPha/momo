@@ -2,7 +2,14 @@ from fastapi import APIRouter, Request, Header, HTTPException
 from app.services.line_service import LineService
 from linebot.v3.exceptions import InvalidSignatureError
 
+from app.core.config import settings
+
 router = APIRouter()
+
+@router.get("/config/maps")
+async def get_maps_config():
+    """Returns the Google Maps API Key for the frontend"""
+    return {"api_key": settings.GOOGLE_MAPS_API_KEY}
 
 @router.post("/webhook")
 async def line_webhook(
