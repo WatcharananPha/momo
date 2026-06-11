@@ -1,125 +1,102 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+:root {
+    /* Spacing System (4px Grid) */
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 20px;
+    --space-6: 24px;
+    --space-8: 32px;
+    --space-10: 40px;
 
-* { -webkit-tap-highlight-color: transparent; }
+    /* Typography Scale (Minor Third) */
+    --fs-xs: 12px;
+    --fs-sm: 14px;
+    --fs-base: 16px;
+    --fs-md: 18px;
+    --fs-lg: 20px;
+    --fs-xl: 24px;
+    --fs-2xl: 32px;
+
+    /* Semantic Colors */
+    --brand-primary: #046c4e;
+    --brand-surface: #eefcf6;
+    --text-main: #111827;
+    --text-muted: #4b5563;
+    --text-light: #9ca3af;
+    --bg-main: #f9fafb;
+    --card-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.02);
+}
+
+* {
+    -webkit-tap-highlight-color: transparent;
+    box-sizing: border-box;
+}
 
 body {
-    background-color: #e5e7eb;
-    color: #111827;
-    overflow-x: hidden;
-    display: flex;
-    justify-content: center;
-    font-family: 'Inter', sans-serif;
+    font-family: 'Inter', -apple-system, sans-serif;
+    background-color: var(--bg-main);
+    color: var(--text-main);
+    line-height: 1.5;
+    letter-spacing: -0.01em;
 }
 
-#app-container {
-    width: 100%;
-    max-width: 430px;
-    min-height: 100vh;
-    background-color: #f4f7f6;
+/* Senior Level Button Polish */
+.btn-press {
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-press:active {
+    transform: scale(0.96);
+    filter: brightness(0.9);
+}
+
+/* Custom Scrollbar for LIFF */
+.scroll-hide::-webkit-scrollbar {
+    display: none;
+}
+.scroll-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+/* Skeleton Loading Animation */
+@keyframes shimmer {
+    0% { background-position: -468px 0; }
+    100% { background-position: 468px 0; }
+}
+.skeleton {
+    background: #f6f7f8;
+    background-image: linear-gradient(to right, #f6f7f8 0%, #edeef1 20%, #f6f7f8 40%, #f6f7f8 100%);
+    background-repeat: no-repeat;
+    background-size: 800px 104px;
+    display: inline-block;
     position: relative;
-    box-shadow: 0 0 40px rgba(0,0,0,0.1);
-    overflow-x: hidden;
-    display: flex;
-    flex-direction: column;
+    animation: shimmer 1.5s infinite linear;
 }
 
-/* ── Loading Screen ── */
-#loading {
-    position: absolute; inset: 0; background: #046c4e;
-    z-index: 50; display: flex; flex-direction: column;
-    align-items: center; justify-content: center; gap: 16px;
-    color: white; transition: opacity 0.4s ease;
-}
-.spinner-large {
-    width: 40px; height: 40px; border: 3px solid rgba(255,255,255,0.3);
-    border-top-color: #fff; border-radius: 50%;
-    animation: spin 1s linear infinite;
-}
-
-#app-content { opacity: 0; transition: opacity 0.6s ease-out; padding-bottom: 110px; }
-#app-content.visible { opacity: 1; }
-
-.btn-press { transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1); }
-.btn-press:active { transform: scale(0.95); }
-
-.scroll-hide::-webkit-scrollbar { display: none; }
-.scroll-hide { -ms-overflow-style: none; scrollbar-width: none; }
-
-/* ── Action Sheet Modal ── */
-#booking-modal {
-    position: absolute; inset: 0; background: rgba(17, 24, 39, 0.5);
-    backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px);
-    z-index: 100; display: none; align-items: flex-end;
-    opacity: 0; transition: opacity 0.3s ease;
-}
-#booking-modal.open { display: flex; opacity: 1; }
-.modal-sheet {
-    background: #ffffff; width: 100%;
-    border-radius: 28px 28px 0 0; padding: 0 0 32px;
-    transform: translateY(100%); transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-    padding-bottom: env(safe-area-inset-bottom, 32px);
-}
-#booking-modal.open .modal-sheet { transform: translateY(0); }
-
-/* ── Intro Page ── */
-#intro-page {
-    position: absolute; inset: 0; background: #fff;
-    z-index: 60; display: none; flex-direction: column;
-}
-#intro-page.visible { display: flex; }
-
-@keyframes spin { to { transform: rotate(360deg); } }
-.spinner-small {
-    width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3);
-    border-top-color: #fff; border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-}
-
-.shadow-card {
-    box-shadow: 0 4px 15px -3px rgba(0, 0, 0, 0.05), 0 2px 6px -2px rgba(0, 0, 0, 0.025);
-}
-.shadow-floating {
-    box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.08);
-}
-
-/* ── Custom Toast Notification ── */
-#toast-container {
+/* Toast Polish */
+.toast {
     position: fixed;
-    top: env(safe-area-inset-top, 24px);
-    left: 0;
-    right: 0;
+    top: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-100px);
+    opacity: 0;
+    background: #1f2937;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 99px;
+    box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
     z-index: 9999;
     display: flex;
-    flex-direction: column;
     align-items: center;
-    gap: 12px;
-    pointer-events: none;
-    padding: 0 16px;
-}
-
-.toast {
-    background: rgba(17, 24, 39, 0.95);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    color: white;
-    padding: 14px 20px;
-    border-radius: 16px;
-    box-shadow: 0 20px 40px -10px rgba(0,0,0,0.2);
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    width: auto;
-    max-width: 90%;
-    transform: translateY(-100%) scale(0.9);
-    opacity: 0;
+    gap: 8px;
+    font-weight: 600;
+    font-size: 14px;
     transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .toast.show {
-    transform: translateY(0) scale(1);
+    transform: translateX(-50%) translateY(0);
     opacity: 1;
 }
-
-.toast-success { border-left: 4px solid #10b981; }
-.toast-error { border-left: 4px solid #ef4444; }
-.toast-info { border-left: 4px solid #3b82f6; }

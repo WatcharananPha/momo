@@ -3,6 +3,11 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
 from contextlib import asynccontextmanager
 import os
+import logging
+
+# Configure logging early
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 from app.core.config import settings
 from app.core.database import connect_db, disconnect_db
