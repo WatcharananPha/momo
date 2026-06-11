@@ -155,7 +155,6 @@ async function loginToBackend(idToken) {
         }
     }
 }
-
 async function fetchWalletAndPoints() {
     if (!accessToken) return null;
     try {
@@ -163,12 +162,17 @@ async function fetchWalletAndPoints() {
             fetch(`${API_BASE}/credit/wallet`, { headers: { 'Authorization': `Bearer ${accessToken}` } }),
             fetch(`${API_BASE}/points/balance/me`, { headers: { 'Authorization': `Bearer ${accessToken}` } })
         ]);
-        if (!wRes.ok || !pRes.ok) throw new Error("Failed to fetch balance data");
-        const w = await wRes.json();
-        const p = await pRes.json();
-        return { wallet: w.balance, points: p.availablePoints };
-    } catch (e) { 
-        console.error("Data Fetch Error:", e);
+
+        if (!wRes.ok || !pRes.ok) {
+            console.warn("Could not fetch balance data: ", wRes.status, pRes.status);
+            return null;
+        }
+
+        const wallet = await wRes.json();
+        const balance = await pRes.json();
+        return { wallet, balance };
+    } catch (e) {
+        console.error("Data Fetch Error (Wallet/Points):", e);
         return null;
     }
 }

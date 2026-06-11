@@ -17,12 +17,13 @@ async function initHome() {
 
 async function updateDashboardData() {
     const data = await fetchWalletAndPoints();
-    if (data) {
-        document.getElementById('wallet-balance').textContent = data.wallet.toLocaleString();
-        document.getElementById('point-balance').textContent = data.points.toLocaleString();
+    if (data && data.wallet && data.balance) {
+        document.getElementById('wallet-balance').textContent = (data.wallet.balance || 0).toLocaleString();
+        document.getElementById('point-balance').textContent = (data.balance.availablePoints || 0).toLocaleString();
     } else {
-        document.getElementById('wallet-balance').textContent = "1,500";
-        document.getElementById('point-balance').textContent = "250";
+        // Fallback for demo/error state
+        document.getElementById('wallet-balance').textContent = "0";
+        document.getElementById('point-balance').textContent = "0";
     }
 }
 
