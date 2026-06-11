@@ -36,6 +36,19 @@ async function initTracking() {
 
     console.log("[Config] Maps API Key received:", api_key ? "VALID_KEY" : "MISSING");
 
+    // Fallback: try reading a meta tag injected by server-side if fetch failed
+    if (!api_key) {
+        try {
+            const meta = document.querySelector('meta[name="maps-api-key"]');
+            if (meta && meta.content && meta.content !== '__MAP_API__') {
+                api_key = meta.content;
+                console.warn('[Config] Using fallback MAP_API from meta tag.');
+            }
+        } catch (e) {
+            console.warn('[Config] Meta tag fallback failed', e);
+        }
+    }
+
     if (api_key) {
         const container = document.getElementById('map-container');
         if (container) container.classList.remove('hidden');
@@ -45,6 +58,11 @@ async function initTracking() {
         script.src = `https://maps.googleapis.com/maps/api/js?key=${api_key}&libraries=geometry&callback=initTrackingMap`;
         script.async = true;
         script.defer = true;
+        script.onerror = function (ev) {
+            console.error('[Runtime] Google Maps SDK failed to load', ev);
+            try { showToast('Could not load Maps SDK. ตรวจสอบ MAP_API / Network', 'error'); } catch (e) {}
+        };
+        script.onload = function () { console.log('[Runtime] Google Maps SDK script loaded.'); };
         document.head.appendChild(script);
         console.log("[Runtime] Google Maps SDK script dynamically injected.");
     } else {
