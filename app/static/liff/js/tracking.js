@@ -34,12 +34,7 @@ async function initTracking() {
         console.error("[Config] Backend fetch failed for MAP_API:", e);
     }
 
-    // Temporary Fallback (only for local development/demo)
-    if (!api_key) {
-        api_key = "AIzaSyDoftAhC0pHFlx-rfmkrb8cuBwycJipYrc"; 
-    }
-
-    console.log("[Config] Maps API Key configured.");
+    console.log("[Config] Maps API Key received:", api_key ? "VALID_KEY" : "MISSING");
 
     if (api_key) {
         const container = document.getElementById('map-container');
@@ -53,7 +48,7 @@ async function initTracking() {
         document.head.appendChild(script);
         console.log("[Runtime] Google Maps SDK script dynamically injected.");
     } else {
-        console.error("[Config] MAP_API is missing.");
+        console.error("[Config] MAP_API is missing. Please configure it in Railway Variables.");
         showToast("Map Configuration Error", "error");
     }
 
