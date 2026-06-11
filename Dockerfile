@@ -24,4 +24,4 @@ RUN prisma generate
 ENV PORT=9090
 
 # Start command
-CMD ["sh", "-c", "python3 -m prisma db push --force-reset --accept-data-loss && uvicorn app.main:app --host 0.0.0.0 --port $PORT"]
+CMD ["sh", "-c", "python3 -m prisma db push --accept-data-loss && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8080}"]
