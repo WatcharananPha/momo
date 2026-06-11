@@ -14,19 +14,21 @@ async function initTracking() {
     console.info("[Init] Starting Tracking Bootstrap...");
     await initCoreLiff(true);
     
-    // 1. Fetch Maps Config from Backend or use fallback
-    let api_key = "AIzaSyDh9WtOD0-n-Gl15t7UBTuhqtuGUudTeMc"; // Hardcoded fallback provided by user
+    // 1. Fetch Maps Config from Backend securely
+    let api_key = null;
     try {
         const res = await fetch(`${API_BASE}/line/config/maps`);
         if (res.ok) {
             const data = await res.json();
             if (data.api_key) api_key = data.api_key;
+        } else {
+            throw new Error(`HTTP Error ${res.status}`);
         }
     } catch (e) {
-        console.warn("[Config] Backend fetch failed, using hardcoded API key.");
+        console.error("[Config] Backend fetch failed for MAP_API:", e);
     }
 
-    console.log("[Config] Maps API Key configured.");
+    console.log("[Config] Maps API Key received:", api_key ? "VALID_KEY" : "MISSING");
 
     if (api_key) {
         // 2. Unhide container immediately for debugging/UX
@@ -41,7 +43,7 @@ async function initTracking() {
         document.head.appendChild(script);
         console.log("[Runtime] Google Maps SDK script dynamically injected.");
     } else {
-        console.error("[Config] MAP_API is missing.");
+        console.error("[Config] MAP_API is missing. Please configure it in Railway Variables.");
         showToast("Map Configuration Error", "error");
     }
 
