@@ -8,6 +8,8 @@ class BookingBase(BaseModel):
     type: BookingType
     scheduled_at: datetime
     location_name: str
+    customer_lat: Optional[float] = None
+    customer_lng: Optional[float] = None
     party_size: int = Field(1, description="Duration/Rooms/Units")
     notes: Optional[str] = None
 
@@ -40,9 +42,11 @@ class BookingResponse(BaseModel):
     user_id: str
     maid_id: Optional[str] = None
     status: BookingStatus
+    type: BookingType
     credit_cost: Optional[int] = None
     reroll_count: int
     reference_code: str
+    maid: Optional[dict] = None
     created_at: datetime
     updated_at: datetime
 

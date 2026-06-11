@@ -9,7 +9,7 @@ let directionsService = null;
 let directionsRenderer = null;
 let lastRouteTime = 0;
 let currentMaidPos = null;
-let customerPos = { lat: 13.7563, lng: 100.5018 }; // Default. In real app, fetch from booking location.
+let customerPos = null; 
 let animationFrameId = null;
 
 /**
@@ -76,7 +76,9 @@ async function initTracking() {
 // Global Callback for Google Maps SDK
 window.initTrackingMap = function() {
     console.info("[SDK] Google Maps Callback Fired.");
-    const defaultPos = { lat: 13.7563, lng: 100.5018 };
+    
+    // Use customer position or maid position as center, fallback to Bangkok if none available yet
+    const centerPos = customerPos || currentMaidPos || { lat: 13.7563, lng: 100.5018 };
     
     try {
         const container = document.getElementById('map-container');
@@ -94,7 +96,7 @@ window.initTrackingMap = function() {
 
         map = new google.maps.Map(mapElement, {
             zoom: 15,
-            center: defaultPos,
+            center: centerPos,
             disableDefaultUI: true,
             styles: [
                 { "featureType": "poi", "stylers": [{ "visibility": "off" }] },
@@ -106,7 +108,7 @@ window.initTrackingMap = function() {
         directionsService = new google.maps.DirectionsService();
         directionsRenderer = new google.maps.DirectionsRenderer({
             map: map,
-            suppressMarkers: true, // We draw our own animated marker
+            suppressMarkers: true, 
             polylineOptions: {
                 strokeColor: '#046c4e', 
                 strokeWeight: 4,
@@ -114,9 +116,9 @@ window.initTrackingMap = function() {
             }
         });
 
-        // Animated Marker using SVG path for easy rotation
+        // Animated Marker using SVG path
         maidMarker = new google.maps.Marker({
-            position: defaultPos,
+            position: currentMaidPos || centerPos,
             map: map,
             title: "Maid Location",
             icon: {
@@ -131,9 +133,13 @@ window.initTrackingMap = function() {
             }
         });
         
-        currentMaidPos = defaultPos;
-        console.log("[SDK] Map, Routing, and Animated Marker initialized.");
+        console.log("[SDK] Map initialized with center:", centerPos);
         
+        // Trigger route calculation immediately if we already have both positions
+        if (currentMaidPos && customerPos) {
+            calculateAndDisplayRoute(currentMaidPos, customerPos);
+        }
+
         google.maps.event.trigger(map, 'resize');
 
     } catch (e) {
@@ -276,14 +282,25 @@ async function updateMaidLocation() {
         });
         if (res.ok) {
             const data = await res.json();
+            
+            // Sync Customer Position if available
+            if (data.customerLat && data.customerLng) {
+                customerPos = { lat: data.customerLat, lng: data.customerLng };
+            }
+
             if (data.currentLat && data.currentLng && map && maidMarker) {
                 const newPos = { lat: data.currentLat, lng: data.currentLng };
                 
+                // If this is the first time we get maid pos, set it immediately
+                if (!currentMaidPos) currentMaidPos = newPos;
+
                 // 1. Smoothly animate marker to new position
                 smoothMoveMarker(maidMarker, currentMaidPos, newPos);
                 
-                // 2. Recalculate route and ETA (throttled)
-                calculateAndDisplayRoute(newPos, customerPos);
+                // 2. Recalculate route and ETA (throttled) if we have customer pos
+                if (customerPos) {
+                    calculateAndDisplayRoute(newPos, customerPos);
+                }
                 
                 console.log("[Tracking] Data Synced:", newPos.lat, newPos.lng);
             }
@@ -307,6 +324,7 @@ function stopLiveTracking() {
 }
 
 function updateTrackingUI(booking) {
+    console.info("[UI] Updating Tracking Status:", booking.status);
     const status = booking.status;
     const steps = {
         'CONFIRMED': 1,
@@ -320,13 +338,25 @@ function updateTrackingUI(booking) {
     // Update visual nodes
     for (let i = 1; i <= 4; i++) {
         const node = document.getElementById(`step-${i}`);
+        if (!node) continue;
         node.classList.remove('active', 'done');
         if (i < currentStep) node.classList.add('done');
         if (i === currentStep) node.classList.add('active');
     }
 
+    // Update Maid Info
+    if (booking.maid) {
+        const nameEl = document.getElementById('maid-name');
+        const picEl = document.getElementById('maid-pic');
+        if (nameEl) nameEl.textContent = booking.maid.fullName || "Assigned Maid";
+        if (picEl && booking.maid.profilePictureUrl) {
+            picEl.src = booking.maid.profilePictureUrl;
+        }
+    }
+
     if (status === 'COMPLETED') {
-        document.getElementById('review-section').classList.remove('hidden');
+        const reviewSection = document.getElementById('review-section');
+        if (reviewSection) reviewSection.classList.remove('hidden');
     }
 }
 

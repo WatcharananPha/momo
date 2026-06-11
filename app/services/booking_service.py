@@ -52,6 +52,8 @@ class BookingService:
                 "status": BookingStatus.AUTO_MATCHING,
                 "scheduledAt": data.scheduled_at,
                 "locationName": data.location_name,
+                "customerLat": data.customer_lat,
+                "customerLng": data.customer_lng,
                 "partySize": data.party_size,
                 "notes": data.notes,
                 "creditCost": credit_cost,
@@ -198,6 +200,8 @@ class BookingService:
             select={
                 "currentLat": True,
                 "currentLng": True,
+                "customerLat": True,
+                "customerLng": True,
                 "lastLocationAt": True,
                 "status": True
             }

@@ -60,3 +60,17 @@ def test_html_structure_for_maps():
     assert 'id="gmaps-script"' not in html_content, "Hardcoded map script placeholder should be removed"
 
     print("\n✅ HTML Structure Test Passed: DOM Containers are ready for SDK binding.")
+
+def test_html_placeholder_replacement():
+    """
+    Test 4: Server-side Template Injection
+    Verify that the server replaces __MAP_API__ with the actual key.
+    """
+    response = client.get("/liff/tracking")
+    assert response.status_code == 200
+    assert "__MAP_API__" not in response.text
+    # It should contain the API key (which is mocked or from env in tests)
+    from app.core.config import settings
+    if settings.GOOGLE_MAPS_API_KEY:
+        assert settings.GOOGLE_MAPS_API_KEY in response.text
+    print("\n✅ HTML Placeholder Test Passed: server-side injection works.")

@@ -79,6 +79,7 @@ async def get_my_bookings(
     from app.core.database import db
     bookings = await db.booking.find_many(
         where={"userId": current_user.id},
+        include={"maid": True},
         order={"createdAt": "desc"}
     )
     return bookings
