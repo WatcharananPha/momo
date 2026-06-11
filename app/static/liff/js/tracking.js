@@ -18,23 +18,15 @@ let animationFrameId = null;
 
 async function initTracking() {
     console.info("[Init] Starting Tracking Bootstrap...");
-    
-    if (window.updateDebug) updateDebug('liff', 'Initializing...');
     await initCoreLiff(true);
-    if (window.updateDebug) updateDebug('liff', 'Ready', '#4ade80');
     
-    // 1. Fetch Maps Config (Optional now but kept for consistency)
-    let api_key = null;
+    // Check key from meta
     const meta = document.querySelector('meta[name="maps-api-key"]');
     if (meta && meta.content && meta.content !== '__MAP_API__' && meta.content !== '') {
-        api_key = meta.content;
-        if (window.updateDebug) updateDebug('key', 'Detected', '#4ade80');
+        console.log("[Config] Maps API Key detected in meta.");
     } else {
-        if (window.updateDebug) updateDebug('key', 'Missing', '#f87171');
+        console.warn("[Config] Maps API Key missing in meta tag.");
     }
-
-    // We no longer inject the script here as it's in tracking.html
-    if (window.updateDebug) updateDebug('sdk', 'Loading...');
 
     await fetchActiveBooking();
 }
@@ -42,33 +34,28 @@ async function initTracking() {
 // Global Callback for Google Maps SDK
 window.initTrackingMap = function() {
     console.info("[SDK] Google Maps Callback Fired.");
-    if (window.updateDebug) {
-        updateDebug('sdk', 'Success', '#4ade80');
-        updateDebug('cb', 'Fired', '#4ade80');
-    }
     
-    // Use customer position or maid position as center
+    // Default to Bangkok if nothing else
     const centerPos = customerPos || currentMaidPos || { lat: 13.7563, lng: 100.5018 };
     
     try {
         const container = document.getElementById('map-container');
         if (!container) return;
 
+        // Force show container
+        container.classList.remove('hidden');
+        container.style.display = 'block';
+
         const mapElement = document.getElementById("map");
         if (!mapElement) throw new Error("DOM element #map not found.");
         
-        // Clear the "Loading Map..." content
         mapElement.innerHTML = '';
-        mapElement.className = 'w-full h-full'; 
-
-        if (mapElement.offsetHeight === 0) {
-            mapElement.style.height = "256px"; 
-        }
 
         map = new google.maps.Map(mapElement, {
-            zoom: 15,
+            zoom: 16,
             center: centerPos,
             disableDefaultUI: true,
+            padding: { bottom: 280 }, // Shift center up to account for bottom sheet
             styles: [
                 { "featureType": "poi", "stylers": [{ "visibility": "off" }] },
                 { "featureType": "transit", "stylers": [{ "visibility": "off" }] }
@@ -82,49 +69,44 @@ window.initTrackingMap = function() {
             suppressMarkers: true, 
             polylineOptions: {
                 strokeColor: '#046c4e', 
-                strokeWeight: 4,
+                strokeWeight: 5,
                 strokeOpacity: 0.8
             }
         });
 
         // Animated Marker using SVG path
         maidMarker = new google.maps.Marker({
-            position: currentMaidPos || centerPos || { lat: 13.7563, lng: 100.5018 },
+            position: currentMaidPos || centerPos,
             map: map,
             title: "Maid Location",
             visible: !!currentMaidPos,
             icon: {
                 path: 'M17.402,0H5.643C2.526,0,0,3.467,0,6.584v34.804c0,3.116,2.526,5.644,5.643,5.644h11.759c3.116,0,5.644-2.527,5.644-5.644 V6.584C23.044,3.467,20.518,0,17.402,0z M22.057,14.188v11.665l-2.729,0.351v-4.806L22.057,14.188z M20.625,10.773 c-1.016,3.9-2.219,8.51-2.219,8.51H4.638l-2.222-8.51C2.415,10.773,11.3,7.755,20.625,10.773z M3.748,21.713v4.492l-2.73-0.349 V14.502L3.748,21.713z M1.018,37.938V27.579l2.73,0.343v8.196L1.018,37.938z M2.575,40.882l2.218-3.336h13.771l2.219,3.336H2.575z M19.328,35.805v-7.872l2.729-0.355v10.048L19.328,35.805z',
-                scale: 0.7,
+                scale: 0.8,
                 fillColor: "#059669",
                 fillOpacity: 1,
-                strokeWeight: 1,
+                strokeWeight: 1.5,
                 strokeColor: "#ffffff",
                 rotation: 0,
                 anchor: new google.maps.Point(11, 23)
             }
         });
         
-        console.log("[SDK] Map initialized. Center:", centerPos);
+        // Bind Recenter
+        const recenterBtn = document.getElementById('recenter-btn');
+        if (recenterBtn) {
+            recenterBtn.onclick = () => {
+                const target = currentMaidPos || centerPos;
+                map.panTo(target);
+                map.setZoom(17);
+            };
+        }
+
+        console.log("[SDK] Map initialized with padding.");
         
-        // Trigger route calculation immediately if we already have both positions
         if (currentMaidPos && customerPos) {
             calculateAndDisplayRoute(currentMaidPos, customerPos);
         }
-
-            // Bind bottom-sheet CTA to focus map on maid
-            try {
-                const cta = document.getElementById('pickup-cta');
-                if (cta) {
-                    cta.addEventListener('click', () => {
-                        if (maidMarker && map) {
-                            const pos = maidMarker.getPosition();
-                            map.panTo(pos);
-                            map.setZoom(17);
-                        }
-                    });
-                }
-            } catch (e) { console.warn('Failed to bind CTA', e); }
 
         google.maps.event.trigger(map, 'resize');
 
@@ -133,7 +115,6 @@ window.initTrackingMap = function() {
     }
 };
 
-// ... (fetchActiveBooking remains the same)
 async function fetchActiveBooking() {
     try {
         const res = await fetch(`${API_BASE}/bookings/me`, {
@@ -141,48 +122,39 @@ async function fetchActiveBooking() {
         });
         if (res.ok) {
             const bookings = await res.json();
-            console.log("[Data] Active Bookings:", bookings.length);
-            
             if (bookings.length > 0) {
                 const booking = bookings[0];
                 if (booking.customerLat && booking.customerLng) {
                     customerPos = { lat: booking.customerLat, lng: booking.customerLng };
-                    console.log("[Data] Customer position found:", customerPos);
                 }
                 currentBookingId = booking.id;
                 updateTrackingUI(booking);
 
-                // Tracking Logic Gate
                 const trackableStatuses = ['CONFIRMED', 'ARRIVED', 'IN_PROGRESS'];
                 if (trackableStatuses.includes(booking.status)) {
                     startLiveTracking();
-                } else {
-                    console.log(`[Status] Booking ${booking.id} is ${booking.status}. Tracking idle.`);
                 }
             }
         }
     } catch (e) {
         console.error("[Data] Fetch booking error:", e);
+    } finally {
+        setTimeout(hideLoading, 500);
     }
 }
 
 
 function startLiveTracking() {
-    console.info("[Tracking] Starting Real-time Polling...");
     if (trackingInterval) clearInterval(trackingInterval);
-    
-    // Initial fetch and then poll every 10s
     updateMaidLocation();
     trackingInterval = setInterval(updateMaidLocation, 10000);
 }
 
-// Route Calculation (Throttled for Cost Optimization)
 function calculateAndDisplayRoute(maidPos, destPos) {
     if (!directionsService || !directionsRenderer) return;
 
-    // Throttle route calculation to once every 3 minutes (180000ms)
     const now = Date.now();
-    if (now - lastRouteTime < 180000 && lastRouteTime !== 0) return;
+    if (now - lastRouteTime < 120000 && lastRouteTime !== 0) return;
     lastRouteTime = now;
 
     const request = {
@@ -194,37 +166,14 @@ function calculateAndDisplayRoute(maidPos, destPos) {
     directionsService.route(request, (response, status) => {
         if (status === 'OK') {
             directionsRenderer.setDirections(response);
-            
-            // Extract ETA & Distance
             const leg = response.routes[0].legs[0];
-            const etaText = leg.duration.text;
-            const distanceText = leg.distance.text;
             
-            console.log(`[ETA Update] Arriving in ${etaText} (${distanceText})`);
-            
-            // Update UI ETA (Create element if it doesn't exist)
-            let etaEl = document.getElementById('eta-display');
-            if (!etaEl) {
-                etaEl = document.createElement('div');
-                etaEl.id = 'eta-display';
-                etaEl.className = 'absolute top-4 right-4 bg-brand text-white px-4 py-2 rounded-xl font-bold shadow-lg text-[13px] z-10 animate-fade-in';
-                document.getElementById('map-container').appendChild(etaEl);
-            }
-            etaEl.innerHTML = `ETA: <span class="font-black">${etaText}</span>`;
-            
-                // Update distance in bottom-sheet if present
-                const distEl = document.getElementById('distance-display');
-                if (distEl) distEl.textContent = distanceText;
-                // Also update small ETA line in bottom sheet
-                const etaSmall = document.getElementById('eta-display-small');
-                if (etaSmall) etaSmall.textContent = `ETA: ${etaText}`;
-        } else {
-            console.warn("[Routing] Directions request failed:", status);
+            document.getElementById('distance-display').textContent = leg.distance.text;
+            document.getElementById('eta-display-small').textContent = leg.duration.text;
         }
     });
 }
 
-// Smooth Marker Animation (Lerp)
 function smoothMoveMarker(marker, startPos, endPos, durationMs = 2000) {
     if (!google.maps.geometry) {
         marker.setPosition(endPos);
@@ -234,11 +183,8 @@ function smoothMoveMarker(marker, startPos, endPos, durationMs = 2000) {
     const startTime = performance.now();
     const startLatLng = new google.maps.LatLng(startPos.lat, startPos.lng);
     const endLatLng = new google.maps.LatLng(endPos.lat, endPos.lng);
-    
-    // Calculate Heading for rotation
     const heading = google.maps.geometry.spherical.computeHeading(startLatLng, endLatLng);
     
-    // Only update rotation if there is significant movement
     if (google.maps.geometry.spherical.computeDistanceBetween(startLatLng, endLatLng) > 5) {
         const icon = marker.getIcon();
         icon.rotation = heading;
@@ -255,15 +201,10 @@ function smoothMoveMarker(marker, startPos, endPos, durationMs = 2000) {
         const currentPosLatLng = new google.maps.LatLng(currentLat, currentLng);
 
         marker.setPosition(currentPosLatLng);
-        
-        // Pan map smoothly to follow marker
         map.panTo(currentPosLatLng);
 
-        if (progress < 1) {
-            animationFrameId = requestAnimationFrame(animate);
-        } else {
-            currentMaidPos = endPos; // Sync state
-        }
+        if (progress < 1) animationFrameId = requestAnimationFrame(animate);
+        else currentMaidPos = endPos;
     }
 
     if (animationFrameId) cancelAnimationFrame(animationFrameId);
@@ -278,99 +219,77 @@ async function updateMaidLocation() {
         });
         if (res.ok) {
             const data = await res.json();
-            console.debug('[Tracking] location payload:', data);
-            // Sync Customer Position if available
             if (data.customerLat && data.customerLng) {
                 customerPos = { lat: data.customerLat, lng: data.customerLng };
             }
 
             if (data.currentLat && data.currentLng && map && maidMarker) {
                 const newPos = { lat: data.currentLat, lng: data.currentLng };
-                // Update bottom-sheet distance placeholder while we compute route
-                const distEl = document.getElementById('distance-display');
-                if (distEl) distEl.textContent = 'Calculating...';
-                
-                // Show map if it was hidden
-                const container = document.getElementById('map-container');
-                if (container && container.classList.contains('hidden')) {
-                    container.classList.remove('hidden');
-                    container.style.display = 'block';
-                    map.setCenter(newPos);
-                    google.maps.event.trigger(map, 'resize');
-                }
-
-                // If this is the first time we get maid pos, set it immediately
                 if (!currentMaidPos) {
                     currentMaidPos = newPos;
                     maidMarker.setPosition(newPos);
                     maidMarker.setVisible(true);
                 }
-
-                // 1. Smoothly animate marker to new position
                 smoothMoveMarker(maidMarker, currentMaidPos, newPos);
-                
-                // 2. Recalculate route and ETA (throttled) if we have customer pos
-                if (customerPos) {
-                    calculateAndDisplayRoute(newPos, customerPos);
-                }
-                
-                console.log("[Tracking] Data Synced:", newPos.lat, newPos.lng);
+                if (customerPos) calculateAndDisplayRoute(newPos, customerPos);
             }
             
-            if (data.status === 'COMPLETED' || data.status === 'CANCELLED') {
-                console.log("[Tracking] Terminal status reached. Killing poll.");
-                stopLiveTracking();
-            }
+            if (data.status === 'COMPLETED' || data.status === 'CANCELLED') stopLiveTracking();
         }
     } catch (e) {
         console.error("[Tracking] Update failed:", e);
     }
 }
 
-// ... (rest of the file: stopLiveTracking, updateTrackingUI, setRating, submitReview)
 function stopLiveTracking() {
-    if (trackingInterval) {
-        clearInterval(trackingInterval);
-        trackingInterval = null;
-    }
+    if (trackingInterval) clearInterval(trackingInterval);
+    trackingInterval = null;
 }
 
 function updateTrackingUI(booking) {
-    console.info("[UI] Updating Tracking Status:", booking.status);
     const status = booking.status;
-    const steps = {
-        'CONFIRMED': 1,
-        'ARRIVED': 2,
-        'IN_PROGRESS': 3,
-        'COMPLETED': 4
-    };
+    const stepMap = { 'CONFIRMED': 1, 'ARRIVED': 2, 'IN_PROGRESS': 3, 'COMPLETED': 4 };
+    const currentStep = stepMap[status] || 1;
     
-    const currentStep = steps[status] || 1;
-    
-    // Update visual nodes
+    // Progress Bar
+    const progress = ((currentStep - 1) / 3) * 100;
+    document.getElementById('tracker-progress').style.width = `${progress}%`;
+
+    // Nodes
     for (let i = 1; i <= 4; i++) {
         const node = document.getElementById(`step-${i}`);
         if (!node) continue;
-        node.classList.remove('active', 'done');
-        if (i < currentStep) node.classList.add('done');
-        if (i === currentStep) node.classList.add('active');
+        node.classList.remove('bg-brand', 'border-brand-surface', 'border-slate-100');
+        if (i <= currentStep) {
+            node.classList.add('bg-brand', 'border-brand-surface');
+        } else {
+            node.classList.add('bg-white', 'border-slate-100');
+        }
     }
 
-    // Update Maid Info
+    const titleMap = {
+        'CONFIRMED': 'Maid Confirmed',
+        'ARRIVED': 'Maid has Arrived',
+        'IN_PROGRESS': 'Cleaning in Progress',
+        'COMPLETED': 'Job Finished'
+    };
+    document.getElementById('status-title').textContent = titleMap[status] || 'Processing';
+
     if (booking.maid) {
-        const nameEl = document.getElementById('maid-name');
-        const picEl = document.getElementById('maid-pic');
-        const tierEl = document.getElementById('maid-tier');
-        if (nameEl) nameEl.textContent = booking.maid.fullName || "Assigned Maid";
-        if (tierEl) tierEl.textContent = `Maid assigned • ${booking.maid.tier || 'PRO'}`;
-        if (picEl && booking.maid.profilePictureUrl) {
-            picEl.src = booking.maid.profilePictureUrl;
+        document.getElementById('maid-name').textContent = booking.maid.fullName || "Your Professional";
+        document.getElementById('maid-tier').textContent = `• ${booking.maid.tier || 'PRO'} Tier`;
+        document.getElementById('maid-rating').textContent = (booking.maid.rating || 4.9).toFixed(1);
+        if (booking.maid.profilePictureUrl) {
+            document.getElementById('maid-pic').src = booking.maid.profilePictureUrl;
         }
     }
 
     if (status === 'COMPLETED') {
         const reviewSection = document.getElementById('review-section');
-        if (reviewSection) reviewSection.classList.remove('hidden');
+        if (reviewSection) {
+            reviewSection.classList.remove('hidden');
+            setTimeout(() => reviewSection.style.transform = 'translateY(0)', 100);
+        }
     }
 }
 
@@ -378,46 +297,29 @@ function setRating(rating) {
     selectedRating = rating;
     const btns = document.querySelectorAll('#review-section button');
     btns.forEach((btn, idx) => {
-        if (idx < rating) {
-            btn.classList.add('bg-white/30');
-            btn.classList.remove('bg-white/10');
-        } else if (idx < 5) {
-            btn.classList.remove('bg-white/30');
-            btn.classList.add('bg-white/10');
-        }
+        if (idx < rating) btn.classList.replace('bg-white/10', 'bg-white/30');
+        else if (idx < 5) btn.classList.replace('bg-white/30', 'bg-white/10');
     });
 }
 
 async function submitReview() {
     if (!currentBookingId) return;
-    
     try {
         const res = await fetch(`${API_BASE}/reviews/`, {
             method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${accessToken}`
-            },
-            body: JSON.stringify({
-                booking_id: currentBookingId,
-                rating: selectedRating,
-                comment: "Great service!"
-            })
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
+            body: JSON.stringify({ booking_id: currentBookingId, rating: selectedRating, comment: "Great service!" })
         });
-
         if (res.ok) {
-            showToast("Thank you for your review! +10 Points earned.", "success");
-            document.getElementById('review-section').classList.add('hidden');
-        } else {
-            const err = await res.json();
-            showToast(err.detail || "Review failed", "error");
+            showToast("Review submitted! +10 Points.", "success");
+            document.getElementById('review-section').style.transform = 'translateY(100%)';
+            setTimeout(() => document.getElementById('review-section').classList.add('hidden'), 500);
         }
     } catch (e) {
         showToast("Error submitting review", "error");
     }
 }
 
-// Start
 document.addEventListener("DOMContentLoaded", () => {
     initTracking();
 });
