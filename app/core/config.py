@@ -24,7 +24,7 @@ class Settings(BaseSettings):
     PAYMENT_MOCK_MODE: bool = os.getenv("PAYMENT_MOCK_MODE", "true").lower() == "true"
     OMISE_PUBLIC_KEY: str = os.getenv("OMISE_PUBLIC_KEY", "")
     OMISE_SECRET_KEY: str = os.getenv("OMISE_SECRET_KEY", "")
-    GOOGLE_MAPS_API_KEY: str = os.getenv("GOOGLE_MAPS_API_KEY", "")
+    GOOGLE_MAPS_API_KEY: str = os.getenv("MAP_API", "")
 
     class Config:
         env_file = ".env"
