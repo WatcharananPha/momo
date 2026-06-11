@@ -28,44 +28,45 @@ async function initTracking() {
             const data = await res.json();
             if (data.api_key) api_key = data.api_key;
         } else {
-            throw new Error(`HTTP Error ${res.status}`);
+            console.error("[Config] Backend returned error status:", res.status);
         }
     } catch (e) {
         console.error("[Config] Backend fetch failed for MAP_API:", e);
     }
 
-    console.log("[Config] Maps API Key received:", api_key ? "VALID_KEY" : "MISSING");
-
     // Fallback: try reading a meta tag injected by server-side if fetch failed
     if (!api_key) {
-        try {
-            const meta = document.querySelector('meta[name="maps-api-key"]');
-            if (meta && meta.content && meta.content !== '__MAP_API__') {
-                api_key = meta.content;
-                console.warn('[Config] Using fallback MAP_API from meta tag.');
-            }
-        } catch (e) {
-            console.warn('[Config] Meta tag fallback failed', e);
+        const meta = document.querySelector('meta[name="maps-api-key"]');
+        if (meta && meta.content && meta.content !== '__MAP_API__' && meta.content !== '') {
+            api_key = meta.content;
+            console.warn('[Config] Using fallback MAP_API from meta tag.');
         }
     }
 
-    if (api_key) {
-        // 3. Dynamic Script Injection (with geometry library for rotation math)
-        const script = document.createElement('script');
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${api_key}&libraries=geometry&callback=initTrackingMap`;
-        script.async = true;
-        script.defer = true;
-        script.onerror = function (ev) {
-            console.error('[Runtime] Google Maps SDK failed to load', ev);
-            try { showToast('Could not load Maps SDK. ตรวจสอบ MAP_API / Network', 'error'); } catch (e) {}
-        };
-        script.onload = function () { console.log('[Runtime] Google Maps SDK script loaded.'); };
-        document.head.appendChild(script);
-        console.log("[Runtime] Google Maps SDK script dynamically injected.");
-    } else {
-        console.error("[Config] MAP_API is missing. Please configure it in Railway Variables.");
-        showToast("Map Configuration Error", "error");
+    if (!api_key) {
+        console.error("[Config] FATAL: MAP_API Key is MISSING. Please set 'MAP_API' variable in Railway Dashboard.");
+        showToast("Missing Maps API Key. Please check Railway Variables.", "error");
+        
+        const mapEl = document.getElementById("map");
+        if (mapEl) {
+            mapEl.innerHTML = '<div class="p-4 text-center text-red-500 font-bold">API Key Missing<br><span class="text-[10px] text-slate-400">Set MAP_API in Railway Dashboard</span></div>';
+            mapEl.className = 'w-full h-full flex items-center justify-center bg-red-50';
+        }
+        return;
     }
+
+    console.log("[Config] Maps API Key detected. Injecting SDK...");
+
+    // 3. Dynamic Script Injection (with geometry library for rotation math)
+    const script = document.createElement('script');
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${api_key}&libraries=geometry&callback=initTrackingMap`;
+    script.async = true;
+    script.defer = true;
+    script.onerror = function (ev) {
+        console.error('[Runtime] Google Maps SDK failed to load. Check API Key validity and billing.', ev);
+        showToast('Google Maps SDK Load Failed', 'error');
+    };
+    document.head.appendChild(script);
 
     await fetchActiveBooking();
 }
