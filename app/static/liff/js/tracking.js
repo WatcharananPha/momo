@@ -81,12 +81,12 @@ window.initTrackingMap = function() {
         const container = document.getElementById('map-container');
         if (!container) return;
 
-        // Force show container for user feedback
-        container.classList.remove('hidden');
-        container.style.display = 'block';
-
         const mapElement = document.getElementById("map");
         if (!mapElement) throw new Error("DOM element #map not found.");
+        
+        // Clear the "Loading Map..." content
+        mapElement.innerHTML = '';
+        mapElement.className = 'w-full h-full'; 
 
         if (mapElement.offsetHeight === 0) {
             mapElement.style.height = "256px"; 
