@@ -59,7 +59,8 @@ async function initTracking() {
 
     // 3. Dynamic Script Injection (with geometry library for rotation math)
     const script = document.createElement('script');
-    const sdkUrl = `https://maps.googleapis.com/maps/api/js?key=${api_key}&libraries=geometry&callback=initTrackingMap`;
+    // Added libraries=maps,marker,geometry to ensure compatibility with new Google Maps standards
+    const sdkUrl = `https://maps.googleapis.com/maps/api/js?key=${api_key}&libraries=maps,marker,geometry&callback=initTrackingMap`;
     script.src = sdkUrl;
     script.async = true;
     script.defer = true;
