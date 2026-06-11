@@ -20,22 +20,25 @@ async def connect_db(retries: int = 5, base_delay: float = 1.0) -> bool:
     """
     global db_connected
     attempt = 0
+    print(f"[DB] Initializing connection to {settings.DATABASE_URL[:20]}...")
     while attempt < retries:
         attempt += 1
         try:
             await db.connect()
             db_connected = True
+            print(f"[DB] Prisma connected to database (attempt={attempt})")
             logger.info("Prisma connected to database (attempt=%d)", attempt)
             return True
         except Exception as e:
+            print(f"[DB] Connection attempt {attempt} failed: {str(e)}")
             logger.error("Database connect attempt %d failed: %s", attempt, e)
             db_connected = False
             if attempt < retries:
                 sleep_for = base_delay * (2 ** (attempt - 1))
-                logger.info("Retrying DB connect in %.1fs...", sleep_for)
+                print(f"[DB] Retrying in {sleep_for}s...")
                 await asyncio.sleep(sleep_for)
             else:
-                logger.error("All %d DB connect attempts failed.", retries)
+                print(f"[DB] All {retries} connect attempts failed.")
                 return False
 
 
