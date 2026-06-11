@@ -1,4 +1,5 @@
 import streamlit as st
+import streamlit.components.v1 as components
 import pandas as pd
 from datetime import datetime, date
 import plotly.express as px
@@ -379,7 +380,7 @@ for status in ["Pending", "In Progress", "Blocked", "Review", "Completed"]:
 
 html_kanban += "</div>"
 
-st.components.v1.html(html_kanban, height=800, scrolling=True)
+components.html(html_kanban, height=800, scrolling=True)
 
 st.divider()
 st.subheader("Project Calendar View")
@@ -447,7 +448,7 @@ html_calendar = f"""
 </script>
 """
 
-st.components.v1.html(html_calendar, height=700, scrolling=True)
+components.html(html_calendar, height=700, scrolling=True)
 
 st.sidebar.divider()
 st.sidebar.subheader("Sprint Analytics")
