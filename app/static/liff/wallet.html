@@ -3,157 +3,144 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Momo — Wallet</title>
-    <!-- Fallback background to prevent white screen while CSS loads -->
-    <style>body { background-color: #f4f7f6; margin: 0; padding: 0; }</style>
-    <!-- Emergency Script: Show app if JS fails to load -->
-    <script>
-        window.onload = function() {
-            setTimeout(function() {
-                var loading = document.getElementById('loading');
-                if (loading && loading.style.display !== 'none') {
-                    console.warn("Emergency: Forcing loading screen hide");
-                    loading.style.display = 'none';
-                    var content = document.getElementById('app-content');
-                    if (content) { content.style.opacity = '1'; content.classList.add('visible'); }
-                }
-            }, 6000);
-        };
-    </script>
+    <title>Momo — Digital Wallet</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-    <link rel="stylesheet" href="/static/liff/css/style.css?v=1.0.5">
-    <link rel="stylesheet" href="/static/liff/css/design-system.css?v=1.0.0">
+    <link rel="stylesheet" href="/static/liff/css/style.css?v=1.0.7">
+    <link rel="stylesheet" href="/static/liff/css/design-system.css?v=1.0.7">
     <script>
         tailwind.config = {
             theme: {
                 extend: {
                     fontFamily: { sans: ['"Inter"', 'sans-serif'] },
                     colors: {
-                        brand: { DEFAULT: '#046c4e', light: '#059669', dark: '#034a36', surface: '#eefcf6' },
-                        ink: { DEFAULT: '#111827', muted: '#6b7280', light: '#9ca3af' },
-                        bg: '#f4f7f6'
+                        brand: { DEFAULT: '#046c4e', light: '#059669', dark: '#034a36', surface: '#f0fdf4' },
+                        ink: { DEFAULT: '#111827', muted: '#4b5563', light: '#9ca3af' },
+                        bg: '#f9fafb'
                     }
                 }
             }
         }
     </script>
 </head>
-<body>
+<body class="bg-bg antialiased text-ink">
 
-<div id="app-container">
+<div id="app-container" class="h-full w-full">
     
-    <!-- Loading Screen (Highest priority) -->
-    <div id="loading" style="position:fixed; inset:0; background:#046c4e; z-index:9999; display:flex; flex-direction:column; align-items:center; justify-content:center; color:white;">
-        <div class="spinner-large" style="width:40px; height:40px; border:3px solid rgba(255,255,255,0.3); border-top-color:#fff; border-radius:50%; animation:spin 1s linear infinite;"></div>
-        <div style="font-weight:bold; letter-spacing:0.1em; text-transform:uppercase; font-size:0.875rem; margin-top:1rem;">Wallet</div>
+    <div id="loading" class="fixed inset-0 bg-brand z-[9999] flex flex-col items-center justify-center">
+        <div class="w-10 h-10 border-4 border-white/20 border-t-white rounded-full animate-spin"></div>
     </div>
 
-    <!-- Intro Page Placeholder for app.js stability -->
-    <div id="intro-page" class="hidden"></div>
+    <div id="app-content" class="h-full w-full overflow-y-auto scroll-hide pb-[120px]">
+        <div class="pt-[env(safe-area-inset-top,24px)]"></div>
 
-    <div id="app-content" class="h-full w-full overflow-y-auto scroll-hide opacity-0 transition-opacity duration-500 pb-[100px]">
-        <div class="h-[env(safe-area-inset-top,0px)]"></div>
-
-        <header class="px-6 pt-10 pb-4 flex items-center justify-between">
-            <h1 class="font-extrabold text-[24px] text-ink tracking-tight">Wallet</h1>
-            <div class="w-10 h-10 rounded-lg overflow-hidden border border-gray-200 shadow-sm">
+        <header class="px-6 pt-10 pb-6 flex items-center justify-between">
+            <div>
+                <h1 class="text-[28px] font-black text-ink tracking-tighter leading-none">Wallet</h1>
+                <p class="text-[13px] text-ink-muted font-bold mt-1 uppercase tracking-widest opacity-60">Digital Assets</p>
+            </div>
+            <div class="w-12 h-12 rounded-2xl overflow-hidden border-2 border-white shadow-lg bg-white">
                 <img id="user-picture" src="https://ui-avatars.com/api/?name=Guest&background=f3f4f6&color=111827" alt="Profile" class="w-full h-full object-cover">
             </div>
         </header>
 
+        <!-- Balance Card (Premium) -->
         <section class="px-6 mt-2">
-            <div class="bg-ink rounded-[28px] p-8 text-white shadow-xl relative overflow-hidden">
-                <div class="absolute -right-10 -bottom-10 w-40 h-40 bg-white opacity-5 rounded-full blur-3xl"></div>
-                <span class="text-white/40 text-[10px] font-bold uppercase tracking-[0.2em]">Available Balance</span>
-                <div class="flex items-baseline gap-2 mt-2 mb-8">
-                    <h2 class="text-5xl font-black tracking-tighter" id="wallet-balance">—</h2>
-                    <span class="text-xs font-bold text-white/30 uppercase tracking-widest">บาท</span>
-                </div>
+            <div class="bg-ink rounded-[40px] p-10 text-white shadow-2xl relative overflow-hidden group">
+                <div class="absolute -right-20 -top-20 w-64 h-64 bg-brand/20 rounded-full blur-3xl group-hover:bg-brand/30 transition-all duration-1000"></div>
+                <div class="absolute -left-10 -bottom-10 w-40 h-40 bg-white/5 rounded-full blur-2xl"></div>
                 
-                <div class="flex gap-4">
-                    <button class="flex-1 bg-brand text-white font-bold text-[13px] py-4 rounded-2xl btn-press shadow-lg shadow-brand/20" onclick="openPackages()">
-                        Top Up
-                    </button>
-                    <button class="flex-1 bg-white/10 text-white font-bold text-[13px] py-4 rounded-2xl btn-press" onclick="showToast('Transfer coming soon', 'info')">
-                        Transfer
-                    </button>
+                <div class="relative z-10 flex flex-col items-center text-center">
+                    <span class="text-white/40 text-[11px] font-black uppercase tracking-[0.3em] mb-4">Total Balance</span>
+                    <div class="flex items-baseline gap-3 mb-10">
+                        <h2 class="text-[56px] font-black tracking-tighter leading-none" id="wallet-balance">0</h2>
+                        <span class="text-[18px] font-black text-brand-light uppercase tracking-widest">บาท</span>
+                    </div>
+                    
+                    <div class="flex gap-4 w-full">
+                        <button class="flex-1 bg-brand text-white font-black text-[14px] py-5 rounded-[24px] btn-press shadow-xl shadow-brand/20 uppercase tracking-widest" onclick="openPackages()">
+                            Top Up
+                        </button>
+                        <button class="flex-1 bg-white/10 text-white font-black text-[14px] py-5 rounded-[24px] btn-press border border-white/5 uppercase tracking-widest" onclick="showToast('Transfer coming soon', 'info')">
+                            Send
+                        </button>
+                    </div>
                 </div>
             </div>
         </section>
 
-        <section class="px-6 mt-10">
-            <div class="flex items-center justify-between mb-6">
-                <h3 class="font-black text-ink text-[17px] tracking-tight">Recent Activity</h3>
+        <!-- Recent Activity Section -->
+        <section class="px-6 mt-12">
+            <div class="flex items-center justify-between mb-8">
+                <h3 class="text-[19px] font-black tracking-tight text-ink">Recent Activity</h3>
+                <span class="text-[12px] font-black text-brand uppercase tracking-wider">All History</span>
             </div>
             
-            <div id="transactions-container" class="bg-white rounded-[28px] p-6 shadow-card border border-gray-100 flex flex-col gap-6">
-                <p class="text-center text-ink-muted text-[13px] py-8">Fetching activity...</p>
+            <div id="transactions-container" class="bg-white rounded-[32px] p-4 shadow-sm border border-gray-100/50 flex flex-col min-h-[300px]">
+                <div class="flex flex-col items-center justify-center py-20 opacity-30">
+                    <div class="w-12 h-12 border-4 border-slate-200 border-t-slate-400 rounded-full animate-spin"></div>
+                    <p class="mt-4 text-[13px] font-black uppercase tracking-widest">Syncing Records</p>
+                </div>
             </div>
         </section>
     </div>
 
-    <!-- Navigation -->
-    <nav class="fixed bottom-0 w-full max-w-[430px] left-1/2 -translate-x-1/2 bg-white border-t border-gray-100 flex justify-around items-center px-6 py-4 z-[200] pb-[calc(1rem+env(safe-area-inset-bottom))]">
-        <a href="/liff/index" class="flex flex-col items-center gap-1 text-ink-muted cursor-pointer hover:text-ink transition-colors">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
-                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline>
-            </svg>
-        </a>
-        <a href="/liff/wallet" class="flex flex-col items-center gap-1 text-ink cursor-pointer">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <rect x="2" y="5" width="20" height="14" rx="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line>
-            </svg>
-        </a>
-        <a href="/liff/tracking" class="flex flex-col items-center gap-1 text-ink-muted cursor-pointer hover:text-ink transition-colors">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle>
-            </svg>
-        </a>
-        <a href="/liff/profile" class="flex flex-col items-center gap-1 text-ink-muted cursor-pointer hover:text-ink transition-colors">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle>
-            </svg>
-        </a>
+    <!-- Unified Navigation -->
+    <nav class="fixed bottom-0 w-full max-w-[430px] left-1/2 -translate-x-1/2 bg-white/80 backdrop-blur-xl border-t border-gray-100 flex justify-around items-center px-6 py-5 z-[200] pb-[calc(1.2rem+env(safe-area-inset-bottom))] shadow-xl">
+        <a href="/liff/index" class="text-ink-light hover:text-brand transition-colors"><svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"></path></svg></a>
+        <a href="/liff/wallet" class="text-brand transform scale-110"><svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg></a>
+        <a href="/liff/tracking" class="text-ink-light hover:text-brand transition-colors"><svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg></a>
+        <a href="/liff/profile" class="text-ink-light hover:text-brand transition-colors"><svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></a>
     </nav>
 
-    <!-- Packages Modal -->
-    <div id="packages-modal" class="fixed inset-0 bg-ink/80 backdrop-blur-md z-[300] hidden items-end" onclick="if(event.target===this) closePackages()">
-        <div class="bg-white rounded-t-[32px] w-full max-w-[430px] p-8 pb-12 animate-slide-up relative mx-auto">
-            <div class="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-8"></div>
-            <h3 class="font-extrabold text-[24px] text-ink leading-tight mb-2">Member Packages</h3>
-            <p class="text-ink-muted text-[13px] mb-8 leading-relaxed">Save more with our monthly credit packages. No expiration on credits.</p>
-            <div class="flex flex-col gap-4 mb-8">
-                <div class="bg-brand/5 border-2 border-brand rounded-[20px] p-5 flex justify-between items-center btn-press cursor-pointer">
-                    <div>
-                        <p class="text-brand font-black text-[18px]">Starter Pack</p>
-                        <p class="text-ink-muted text-[12px]">50 บาท • 30 Days</p>
+    <!-- Packages Sheet -->
+    <div id="packages-modal" class="fixed inset-0 bg-ink/70 backdrop-blur-md z-[500] hidden items-end" onclick="if(event.target===this) closePackages()">
+        <div class="bg-white rounded-t-[40px] w-full max-w-[430px] p-8 pb-12 animate-slide-up relative mx-auto shadow-2xl">
+            <div class="w-12 h-1.5 bg-gray-100 rounded-full mx-auto mb-8"></div>
+            <span class="text-[11px] font-black text-brand uppercase tracking-[0.2em] mb-2 block">Premium Credits</span>
+            <h2 class="text-[28px] font-black text-ink leading-none tracking-tighter mb-4">Select Package</h2>
+            <p class="text-[15px] text-ink-muted leading-relaxed mb-10">Add credits to your digital wallet. Credits never expire and can be used for any service.</p>
+            
+            <div class="flex flex-col gap-4 mb-10">
+                <div class="bg-brand/5 border-2 border-brand rounded-[28px] p-6 flex justify-between items-center btn-press cursor-pointer shadow-sm">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 bg-brand rounded-2xl flex items-center justify-center text-white shadow-lg">
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 14h-2v-2h2v2zm0-4h-2V7h2v5z"></path></svg>
+                        </div>
+                        <div>
+                            <p class="text-ink font-black text-[18px]">Starter Pack</p>
+                            <p class="text-brand font-bold text-[13px]">50 บาท Credits</p>
+                        </div>
                     </div>
                     <div class="text-right">
-                        <p class="text-ink font-black text-[18px]">990.-</p>
-                        <p class="text-brand text-[10px] font-bold uppercase">Popular</p>
+                        <p class="text-brand font-black text-[20px]">990.-</p>
                     </div>
                 </div>
-                <div class="bg-gray-50 border border-gray-100 rounded-[20px] p-5 flex justify-between items-center btn-press cursor-pointer">
-                    <div>
-                        <p class="text-ink font-black text-[18px]">Value Pack</p>
-                        <p class="text-ink-muted text-[12px]">120 บาท • 30 Days</p>
+                <div class="bg-gray-50/50 border border-gray-100 rounded-[28px] p-6 flex justify-between items-center btn-press cursor-pointer">
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 bg-white border border-gray-100 rounded-2xl flex items-center justify-center text-ink-muted">
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"></path></svg>
+                        </div>
+                        <div>
+                            <p class="text-ink font-black text-[18px]">Value Pack</p>
+                            <p class="text-ink-muted font-bold text-[13px]">120 บาท Credits</p>
+                        </div>
                     </div>
                     <div class="text-right">
-                        <p class="text-ink font-black text-[18px]">1,990.-</p>
+                        <p class="text-ink font-black text-[20px]">1,990.-</p>
                     </div>
                 </div>
             </div>
-            <p class="text-[11px] text-ink-light text-center mb-6 px-4">* Payment processing fees may apply for credit cards & e-wallets.</p>
-            <button class="w-full bg-brand text-white font-bold py-5 rounded-[18px] btn-press" onclick="closePackages()">
-                Confirm Selection
+            
+            <button class="w-full bg-brand text-white font-black py-5 rounded-[24px] btn-press shadow-xl shadow-brand/30 text-[16px] uppercase tracking-widest" onclick="closePackages()">
+                Checkout Securely
             </button>
         </div>
     </div>
 </div>
 
-<script src="/static/liff/js/app.js?v=1.0.5"></script>
-<script src="/static/liff/js/wallet.js?v=1.0.5"></script>
+<script src="/static/liff/js/app.js?v=1.0.6"></script>
+<script src="/static/liff/js/wallet.js?v=1.0.6"></script>
 <script>
     function openPackages() {
         document.getElementById('packages-modal').classList.remove('hidden');
@@ -163,6 +150,9 @@
         document.getElementById('packages-modal').classList.add('hidden');
         document.getElementById('packages-modal').classList.remove('flex');
     }
+    document.addEventListener("DOMContentLoaded", () => {
+        setTimeout(hideLoading, 500);
+    });
 </script>
 </body>
 </html>

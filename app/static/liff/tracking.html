@@ -7,8 +7,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <meta name="maps-api-key" content="__MAP_API__">
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-    <link rel="stylesheet" href="/static/liff/css/style.css?v=1.0.6">
-    <link rel="stylesheet" href="/static/liff/css/design-system.css?v=1.0.0">
+    <link rel="stylesheet" href="/static/liff/css/style.css?v=1.0.7">
+    <link rel="stylesheet" href="/static/liff/css/design-system.css?v=1.0.7">
     <script>
         tailwind.config = {
             theme: {
@@ -34,15 +34,12 @@
             transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
             border-top: 1px solid rgba(0,0,0,0.02);
         }
-        .step-node { transition: all 0.4s ease; }
-        .progress-line { height: 3px; border-radius: 99px; }
     </style>
 </head>
-<body>
+<body class="antialiased">
 
 <div id="app-container" class="h-full w-full relative">
     
-    <!-- Loading Layer -->
     <div id="loading" class="fixed inset-0 bg-brand z-[9999] flex flex-col items-center justify-center transition-opacity duration-500">
         <div class="w-12 h-12 border-4 border-white/20 border-t-white rounded-full animate-spin"></div>
         <div class="font-bold tracking-[0.2em] uppercase text-[11px] mt-6 text-white/80">Syncing Live Data</div>
@@ -52,98 +49,94 @@
         
         <!-- Layer 0: Map -->
         <div id="map-container">
-            <div id="map" class="w-full h-full grayscale-[0.2] contrast-[1.1]"></div>
+            <div id="map" class="w-full h-full grayscale-[0.1] contrast-[1.05]"></div>
         </div>
 
         <!-- Layer 1: Top Controls -->
-        <div class="absolute top-0 left-0 w-full z-20 pt-[env(safe-area-inset-top,20px)] px-5 pointer-events-none">
-            <a href="/liff/index" class="w-11 h-11 bg-white rounded-2xl flex items-center justify-center shadow-premium border border-gray-100 btn-press pointer-events-auto">
-                <svg class="w-5 h-5 text-ink" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"></path></svg>
+        <div class="absolute top-0 left-0 w-full z-20 pt-[env(safe-area-inset-top,24px)] px-5 pointer-events-none">
+            <a href="/liff/index" class="w-12 h-12 bg-white rounded-[20px] flex items-center justify-center shadow-premium border border-gray-100 btn-press pointer-events-auto">
+                <svg class="w-6 h-6 text-ink" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"></path></svg>
             </a>
         </div>
 
         <!-- Layer 1: Recenter FAB -->
         <div class="absolute right-5 z-20 pointer-events-auto transition-all" style="bottom: calc(260px + env(safe-area-inset-bottom, 20px));">
-            <button id="recenter-btn" class="w-12 h-12 bg-brand text-white rounded-2xl flex items-center justify-center shadow-premium btn-press">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <button id="recenter-btn" class="w-14 h-14 bg-brand text-white rounded-[22px] flex items-center justify-center shadow-xl btn-press">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24">
                     <path d="M12 2v2m0 16v2M4 12H2m20 0h-2"></path><circle cx="12" cy="12" r="3"></circle>
                 </svg>
             </button>
         </div>
 
-        <!-- Layer 2: Bottom Sheet (Grab Style) -->
-        <div id="bottom-sheet" class="absolute bottom-0 w-full bg-white rounded-t-[32px] shadow-sheet z-40 pb-[env(safe-area-inset-bottom,24px)]">
+        <!-- Layer 2: Bottom Sheet -->
+        <div id="bottom-sheet" class="absolute bottom-0 w-full bg-white rounded-t-[40px] shadow-sheet z-40 pb-[env(safe-area-inset-bottom,24px)]">
             
-            <!-- Grab Handle -->
-            <div class="w-10 h-1 bg-slate-200 rounded-full mx-auto mt-3 mb-6"></div>
+            <div class="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mt-4 mb-6"></div>
             
-            <!-- Status Header -->
-            <div class="px-6 flex justify-between items-start mb-6">
+            <div class="px-8 flex justify-between items-start mb-8">
                 <div>
-                    <span class="text-[11px] font-black uppercase tracking-[0.1em] text-brand/60 block mb-1" id="status-sub">Tracking Status</span>
-                    <h3 class="text-[22px] font-black text-ink leading-tight tracking-tight" id="status-title">Searching...</h3>
-                    <p class="text-[13px] text-ink-muted font-semibold mt-1" id="distance-display">Initializing connection</p>
+                    <span class="text-[11px] font-black uppercase tracking-[0.2em] text-brand/50 block mb-1.5">Live Tracking</span>
+                    <h3 class="text-[26px] font-black text-ink leading-none tracking-tighter" id="status-title">Searching...</h3>
+                    <p class="text-[14px] text-ink-muted font-bold mt-2 flex items-center gap-2" id="distance-display">
+                        <span class="w-1.5 h-1.5 bg-brand rounded-full animate-pulse"></span>
+                        Connecting to provider
+                    </p>
                 </div>
-                <div class="flex flex-col items-end">
-                    <div class="bg-brand-surface text-brand font-black px-3.5 py-2 rounded-2xl text-[15px] border border-brand/5" id="eta-display-small">-- min</div>
+                <div class="bg-brand-surface text-brand font-black px-4 py-2.5 rounded-2xl text-[16px] border border-brand/10 shadow-sm" id="eta-display-small">-- min</div>
+            </div>
+
+            <!-- Progress -->
+            <div class="px-8 mb-10">
+                <div class="relative h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                    <div id="tracker-progress" class="absolute inset-y-0 left-0 bg-brand transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(4,108,78,0.3)]" style="width: 0%"></div>
+                </div>
+                <div class="flex justify-between mt-4">
+                    <span class="text-[10px] font-black uppercase tracking-widest text-brand" id="label-1">Confirmed</span>
+                    <span class="text-[10px] font-black uppercase tracking-widest text-ink-muted/30" id="label-2">Arrived</span>
+                    <span class="text-[10px] font-black uppercase tracking-widest text-ink-muted/30" id="label-3">In-Progress</span>
+                    <span class="text-[10px] font-black uppercase tracking-widest text-ink-muted/30" id="label-4">Finished</span>
                 </div>
             </div>
 
-            <!-- Tracker Progress Bar -->
-            <div class="px-6 mb-8">
-                <div class="relative flex justify-between items-center h-1 bg-slate-100 rounded-full overflow-hidden">
-                    <div id="tracker-progress" class="absolute inset-y-0 left-0 bg-brand transition-all duration-1000 ease-out" style="width: 0%"></div>
-                </div>
-                <div class="flex justify-between mt-3">
-                    <span class="text-[10px] font-black uppercase tracking-tighter text-brand" id="label-1">Confirmed</span>
-                    <span class="text-[10px] font-black uppercase tracking-tighter text-ink-light" id="label-2">Arrived</span>
-                    <span class="text-[10px] font-black uppercase tracking-tighter text-ink-light" id="label-3">In-Progress</span>
-                    <span class="text-[10px] font-black uppercase tracking-tighter text-ink-light" id="label-4">Done</span>
-                </div>
-            </div>
-
-            <div class="px-6">
-                <div class="bg-gray-50/80 rounded-[24px] p-4 flex items-center gap-4 border border-gray-100 shadow-sm">
-                    <div class="w-14 h-14 rounded-2xl overflow-hidden bg-white border-2 border-white shadow-sm relative shrink-0">
+            <div class="px-8">
+                <div class="bg-gray-50 rounded-[32px] p-5 flex items-center gap-5 border border-gray-100 shadow-inner">
+                    <div class="w-16 h-16 rounded-[24px] overflow-hidden bg-white border-4 border-white shadow-md relative shrink-0">
                         <img id="maid-pic" src="https://ui-avatars.com/api/?name=M&background=046c4e&color=fff" class="w-full h-full object-cover" alt="">
                     </div>
                     <div class="flex-1 min-w-0">
-                        <h2 class="font-black text-[16px] text-ink truncate" id="maid-name">Assigning Maid</h2>
-                        <div class="flex items-center gap-2 mt-0.5">
-                            <div class="flex items-center text-yellow-500">
+                        <h2 class="font-black text-[18px] text-ink truncate tracking-tight" id="maid-name">Assigning...</h2>
+                        <div class="flex items-center gap-2 mt-1">
+                            <div class="flex items-center text-yellow-500 bg-white px-2 py-0.5 rounded-lg shadow-sm border border-gray-100">
                                 <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path></svg>
-                                <span class="text-[13px] font-black text-ink ml-1" id="maid-rating">--</span>
+                                <span class="text-[13px] font-black text-ink ml-1" id="maid-rating">4.9</span>
                             </div>
-                            <span class="text-[12px] font-bold text-ink-muted truncate" id="maid-tier">• Loading Profile</span>
+                            <span class="text-[13px] font-bold text-ink-muted truncate" id="maid-tier">• Elite Pro</span>
                         </div>
                     </div>
-                    <div class="flex gap-2 shrink-0">
-                        <button class="w-10 h-10 rounded-xl bg-white border border-gray-200 text-blue-600 flex items-center justify-center btn-press shadow-sm" onclick="showToast('Calling...', 'info')">
-                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M20.01 15.38c-1.23 0-2.42-.2-3.53-.56-.35-.12-.74-.03-1.01.24l-1.57 1.97c-2.83-1.35-5.48-3.9-6.89-6.83l1.95-1.66c.27-.28.35-.67.24-1.02-.37-1.11-.56-2.3-.56-3.53 0-.54-.45-.99-.99-.99H4.19C3.65 3 3 3.24 3 3.99 3 13.28 10.73 21 20.01 21c.71 0 .99-.63.99-1.18v-3.45c0-.54-.45-.99-.99-.99z"></path></svg>
-                        </button>
-                        <button class="w-10 h-10 rounded-xl bg-brand text-white flex items-center justify-center btn-press shadow-sm" onclick="showToast('Opening chat...', 'info')">
-                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"></path></svg>
+                    <div class="flex gap-2.5 shrink-0">
+                        <button class="w-11 h-11 rounded-2xl bg-white border border-gray-200 text-blue-600 flex items-center justify-center btn-press shadow-sm" onclick="showToast('Calling...', 'info')">
+                            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M20.01 15.38c-1.23 0-2.42-.2-3.53-.56-.35-.12-.74-.03-1.01.24l-1.57 1.97c-2.83-1.35-5.48-3.9-6.89-6.83l1.95-1.66c.27-.28.35-.67.24-1.02-.37-1.11-.56-2.3-.56-3.53 0-.54-.45-.99-.99-.99H4.19C3.65 3 3 3.24 3 3.99 3 13.28 10.73 21 20.01 21c.71 0 .99-.63.99-1.18v-3.45c0-.54-.45-.99-.99-.99z"></path></svg>
                         </button>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Terminal: Review Section (Layer 3) -->
-        <section id="review-section" class="fixed inset-x-0 bottom-0 bg-brand rounded-t-[32px] p-10 text-white text-center z-[50] hidden translate-y-full transition-transform duration-700 ease-in-out shadow-sheet">
-            <div class="w-12 h-1 bg-white/20 rounded-full mx-auto mb-8"></div>
-            <h3 class="font-black text-[26px] mb-2 text-white tracking-tight">How was your service?</h3>
-            <p class="text-brand-surface opacity-80 text-[14px] mb-10 font-medium">Rate your professional to earn 10 Momo Points.</p>
+        <!-- Terminal Section -->
+        <section id="review-section" class="fixed inset-x-0 bottom-0 bg-brand rounded-t-[40px] p-10 text-white text-center z-[50] hidden translate-y-full transition-transform duration-700 ease-in-out shadow-2xl">
+            <div class="w-12 h-1.5 bg-white/20 rounded-full mx-auto mb-10"></div>
+            <h3 class="text-[28px] font-black mb-2 tracking-tighter leading-none">Service Complete</h3>
+            <p class="text-brand-surface opacity-80 text-[15px] mb-12 font-medium">How was your experience today?</p>
             
             <div class="flex justify-center gap-4 mb-12">
-                <button class="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center text-3xl transition-all hover:bg-white/20" onclick="setRating(1)">★</button>
-                <button class="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center text-3xl transition-all hover:bg-white/20" onclick="setRating(2)">★</button>
-                <button class="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center text-3xl transition-all hover:bg-white/20" onclick="setRating(3)">★</button>
-                <button class="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center text-3xl transition-all hover:bg-white/20" onclick="setRating(4)">★</button>
-                <button class="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center text-3xl transition-all hover:bg-white/20" onclick="setRating(5)">★</button>
+                <button class="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center text-3xl" onclick="setRating(1)">★</button>
+                <button class="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center text-3xl" onclick="setRating(2)">★</button>
+                <button class="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center text-3xl" onclick="setRating(3)">★</button>
+                <button class="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center text-3xl" onclick="setRating(4)">★</button>
+                <button class="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center text-3xl" onclick="setRating(5)">★</button>
             </div>
             
-            <button class="w-full bg-white text-brand font-black py-5 rounded-[24px] btn-press shadow-2xl text-[16px] uppercase tracking-widest" onclick="submitReview()">Submit Feedback</button>
+            <button class="w-full bg-white text-brand font-black py-5 rounded-[28px] btn-press shadow-2xl text-[16px] uppercase tracking-widest" onclick="submitReview()">Submit Feedback</button>
         </section>
     </div>
 </div>
