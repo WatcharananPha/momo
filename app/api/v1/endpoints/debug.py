@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.core.database import db_connected
+from app.core.database import is_db_connected
 
 router = APIRouter()
 
@@ -9,4 +9,4 @@ async def diagnostics():
     """Return basic diagnostics for the running app so cloud-side 502/502
     situations can be triaged remotely.
     """
-    return {"status": "ok", "db_connected": bool(db_connected)}
+    return {"status": "ok", "db_connected": is_db_connected()}

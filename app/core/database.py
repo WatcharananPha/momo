@@ -12,6 +12,11 @@ db = Prisma(auto_register=True, datasource={"url": settings.DATABASE_URL})
 db_connected = False
 
 
+def is_db_connected() -> bool:
+    """Return the current connection status."""
+    return db_connected
+
+
 async def connect_db(retries: int = 5, base_delay: float = 1.0) -> bool:
     """Attempt to connect to the database with exponential backoff.
     Returns True when connected, False otherwise. Does NOT raise to avoid
