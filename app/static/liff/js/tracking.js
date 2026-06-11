@@ -59,12 +59,19 @@ async function initTracking() {
 
     // 3. Dynamic Script Injection (with geometry library for rotation math)
     const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${api_key}&libraries=geometry&callback=initTrackingMap`;
+    const sdkUrl = `https://maps.googleapis.com/maps/api/js?key=${api_key}&libraries=geometry&callback=initTrackingMap`;
+    script.src = sdkUrl;
     script.async = true;
     script.defer = true;
+    
+    console.debug("[SDK] Requesting URL:", sdkUrl.replace(api_key, "AIzaSy...REDACTED"));
+    
     script.onerror = function (ev) {
-        console.error('[Runtime] Google Maps SDK failed to load. Check API Key validity and billing.', ev);
+        console.error('[Runtime] Google Maps SDK failed to load. Check API Key validity, billing, and Referrer restrictions.', ev);
         showToast('Google Maps SDK Load Failed', 'error');
+    };
+    script.onload = function() {
+        console.info("[SDK] Script tag loaded in DOM.");
     };
     document.head.appendChild(script);
 
