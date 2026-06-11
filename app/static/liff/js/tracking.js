@@ -54,8 +54,21 @@ window.initTrackingMap = function() {
     const defaultPos = { lat: 13.7563, lng: 100.5018 }; // Bangkok Default
     
     try {
+        const container = document.getElementById('map-container');
+        if (container) {
+            container.classList.remove('hidden');
+            container.style.display = 'block'; // Force display just in case
+            console.log("[UI] Map container unhidden. Dimensions:", container.offsetWidth, "x", container.offsetHeight);
+        }
+
         const mapElement = document.getElementById("map");
         if (!mapElement) throw new Error("DOM element #map not found.");
+
+        // Ensure map element has explicit height if Tailwind failed
+        if (mapElement.offsetHeight === 0) {
+            mapElement.style.height = "256px"; // h-64 equivalent
+            console.warn("[UI] Forced explicit height on #map element.");
+        }
 
         map = new google.maps.Map(mapElement, {
             zoom: 15,
@@ -77,6 +90,11 @@ window.initTrackingMap = function() {
             }
         });
         console.log("[SDK] Map and Marker initialized successfully.");
+        
+        // Force a resize event to ensure tiles render if container was hidden
+        google.maps.event.trigger(map, 'resize');
+        map.setCenter(defaultPos);
+
     } catch (e) {
         console.error("[SDK] Render Error:", e);
     }
