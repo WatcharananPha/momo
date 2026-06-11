@@ -4,47 +4,79 @@ let map = null;
 let maidMarker = null;
 let trackingInterval = null;
 
+/**
+ * Senior Dev Insights: Bootstrap sequence and Lifecycle management.
+ * The Map UI failure was likely due to the logic gate in startLiveTracking 
+ * which only unhides the container if a booking is in CONFIRMED/ARRIVED state.
+ */
+
 async function initTracking() {
+    console.info("[Init] Starting Tracking Bootstrap...");
     await initCoreLiff(true);
     
-    // Dynamically load Google Maps script with API Key from backend
+    // 1. Fetch Maps Config from Backend
     try {
         const res = await fetch(`${API_BASE}/line/config/maps`);
+        if (!res.ok) throw new Error(`HTTP Error ${res.status}`);
+        
         const { api_key } = await res.json();
+        console.log("[Config] Maps API Key received:", api_key ? "VALID_KEY" : "MISSING");
+
         if (api_key) {
+            // 2. Unhide container immediately for debugging/UX
+            const container = document.getElementById('map-container');
+            if (container) container.classList.remove('hidden');
+
+            // 3. Dynamic Script Injection (Handle Race Condition)
             const script = document.getElementById('gmaps-script');
-            script.src = `https://maps.googleapis.com/maps/api/js?key=${api_key}&callback=initTrackingMap`;
+            if (script) {
+                script.src = `https://maps.googleapis.com/maps/api/js?key=${api_key}&callback=initTrackingMap`;
+                console.log("[Runtime] Google Maps SDK script injected.");
+            }
+        } else {
+            console.error("[Config] MAP_API is not defined in Backend ENV.");
+            showToast("Map Configuration Error", "error");
         }
     } catch (e) {
-        console.error("Failed to load Maps config", e);
+        console.error("[Bootstrap] Initialization failed:", e);
+        showToast("System failed to initialize maps", "error");
     }
 
     await fetchActiveBooking();
 }
 
-// Google Maps Callback
+// Global Callback for Google Maps SDK
 window.initTrackingMap = function() {
-    console.log("Google Maps Initialized");
-    const defaultPos = { lat: 13.7563, lng: 100.5018 }; // Bangkok
-    map = new google.maps.Map(document.getElementById("map"), {
-        zoom: 15,
-        center: defaultPos,
-        disableDefaultUI: true,
-        styles: [
-            { "featureType": "poi", "stylers": [{ "visibility": "off" }] },
-            { "featureType": "transit", "stylers": [{ "visibility": "off" }] }
-        ]
-    });
+    console.info("[SDK] Google Maps Callback Fired.");
+    const defaultPos = { lat: 13.7563, lng: 100.5018 }; // Bangkok Default
+    
+    try {
+        const mapElement = document.getElementById("map");
+        if (!mapElement) throw new Error("DOM element #map not found.");
 
-    maidMarker = new google.maps.Marker({
-        position: defaultPos,
-        map: map,
-        title: "Maid Location",
-        icon: {
-            url: "https://img.icons8.com/color/48/000000/marker.png",
-            scaledSize: new google.maps.Size(40, 40)
-        }
-    });
+        map = new google.maps.Map(mapElement, {
+            zoom: 15,
+            center: defaultPos,
+            disableDefaultUI: true,
+            styles: [
+                { "featureType": "poi", "stylers": [{ "visibility": "off" }] },
+                { "featureType": "transit", "stylers": [{ "visibility": "off" }] }
+            ]
+        });
+
+        maidMarker = new google.maps.Marker({
+            position: defaultPos,
+            map: map,
+            title: "Maid Location",
+            icon: {
+                url: "https://img.icons8.com/color/48/000000/marker.png",
+                scaledSize: new google.maps.Size(40, 40)
+            }
+        });
+        console.log("[SDK] Map and Marker initialized successfully.");
+    } catch (e) {
+        console.error("[SDK] Render Error:", e);
+    }
 };
 
 async function fetchActiveBooking() {
@@ -54,28 +86,34 @@ async function fetchActiveBooking() {
         });
         if (res.ok) {
             const bookings = await res.json();
+            console.log("[Data] Active Bookings:", bookings.length);
+            
             if (bookings.length > 0) {
                 const booking = bookings[0];
                 currentBookingId = booking.id;
                 updateTrackingUI(booking);
 
-                if (booking.status === 'CONFIRMED' || booking.status === 'ARRIVED') {
+                // Tracking Logic Gate
+                const trackableStatuses = ['CONFIRMED', 'ARRIVED', 'IN_PROGRESS'];
+                if (trackableStatuses.includes(booking.status)) {
                     startLiveTracking();
+                } else {
+                    console.log(`[Status] Booking ${booking.id} is ${booking.status}. Tracking idle.`);
                 }
             }
         }
     } catch (e) {
-        console.error("Fetch booking error", e);
+        console.error("[Data] Fetch booking error:", e);
     }
 }
 
 function startLiveTracking() {
-    document.getElementById('map-container').classList.remove('hidden');
+    console.info("[Tracking] Starting Real-time Polling...");
     if (trackingInterval) clearInterval(trackingInterval);
     
-    // Poll every 10 seconds
+    // Initial fetch and then poll every 10s
+    updateMaidLocation();
     trackingInterval = setInterval(updateMaidLocation, 10000);
-    updateMaidLocation(); // Initial fetch
 }
 
 async function updateMaidLocation() {
@@ -90,14 +128,16 @@ async function updateMaidLocation() {
                 const pos = { lat: data.currentLat, lng: data.currentLng };
                 maidMarker.setPosition(pos);
                 map.panTo(pos);
+                console.log("[Tracking] UI Synced:", pos.lat, pos.lng);
             }
             
             if (data.status === 'COMPLETED' || data.status === 'CANCELLED') {
+                console.log("[Tracking] Terminal status reached. Killing poll.");
                 stopLiveTracking();
             }
         }
     } catch (e) {
-        console.error("Tracking error", e);
+        console.error("[Tracking] Update failed:", e);
     }
 }
 
@@ -106,7 +146,7 @@ function stopLiveTracking() {
         clearInterval(trackingInterval);
         trackingInterval = null;
     }
-    document.getElementById('map-container').classList.add('hidden');
+    // We keep the map visible even if tracking stops for UX context
 }
 
 function updateTrackingUI(booking) {
