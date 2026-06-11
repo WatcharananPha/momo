@@ -71,7 +71,7 @@ h3 { font: var(--f-h3); letter-spacing: -0.02em; }
     border-radius: var(--r-xl);
     padding: var(--s-6);
     border: 1px solid rgba(0,0,0,0.03);
-    shadow: var(--shadow-lg);
+    box-shadow: var(--shadow-lg);
 }
 
 .btn-primary {
@@ -106,5 +106,5 @@ h3 { font: var(--f-h3); letter-spacing: -0.02em; }
 .scroll-hide { -ms-overflow-style: none; scrollbar-width: none; }
 
 /* Safe Area Support */
-.pt-safe { pt: env(safe-area-inset-top, 20px); }
-.pb-safe { pb: env(safe-area-inset-bottom, 20px); }
+.pt-safe { padding-top: env(safe-area-inset-top, 20px); }
+.pb-safe { padding-bottom: env(safe-area-inset-bottom, 20px); }
