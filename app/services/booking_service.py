@@ -179,3 +179,29 @@ class BookingService:
                 LineService.push_message(updated_booking.user.lineUid, status_msgs[status])
                 
         return updated_booking
+
+    @staticmethod
+    async def update_location(booking_id: str, lat: float, lng: float):
+        return await db.booking.update(
+            where={"id": booking_id},
+            data={
+                "currentLat": lat,
+                "currentLng": lng,
+                "lastLocationAt": datetime.utcnow()
+            }
+        )
+
+    @staticmethod
+    async def get_location(booking_id: str):
+        booking = await db.booking.find_unique(
+            where={"id": booking_id},
+            select={
+                "currentLat": True,
+                "currentLng": True,
+                "lastLocationAt": True,
+                "status": True
+            }
+        )
+        if not booking:
+            raise HTTPException(status_code=404, detail="Booking not found")
+        return booking

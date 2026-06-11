@@ -7,10 +7,8 @@ generator client {
   provider = "prisma-client-js"
 }
 
-generator py {
+generator client_py {
   provider = "prisma-client-py"
-  interface = "asyncio"
-  recursive_type_depth = 5
   enable_experimental_decimal = true
 }
 
@@ -19,7 +17,53 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ─── Enums ───────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// Core Identity & Authentication
+// ─────────────────────────────────────────────────────────────────────────────
+
+model User {
+  id                String   @id @default(uuid()) @db.Uuid
+  lineUid           String?  @unique @map("line_uid")
+  displayName       String   @map("display_name")
+  profilePictureUrl String?  @map("profile_picture_url")
+  isGuest           Boolean  @default(false) @map("is_guest")
+  referralCode      String?  @unique @map("referral_code")
+  referredBy        String?  @db.Uuid @map("referred_by")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  membership        Membership?
+  pointBalance      UserPointBalance?
+  pointTransactions PointTransaction[]
+  creditWallet      CreditWallet?
+  bookings          Booking[]
+  reviews           Review[]
+  notificationLogs  NotificationLog[]
+  guestSessions     GuestSession[]
+  maid              Maid?
+  customerTags      CustomerTag[]
+  slipUploads       SlipUpload[]
+
+  @@map("users")
+}
+
+model GuestSession {
+  id                String    @id @default(uuid()) @db.Uuid
+  guestUuid         String    @unique @map("guest_uuid")
+  token             String    @unique
+  expiresAt         DateTime  @map("expires_at")
+  convertedToUserId String?   @db.Uuid @map("converted_to_user_id")
+  createdAt         DateTime  @default(now()) @map("created_at")
+
+  user              User?     @relation(fields: [convertedToUserId], references: [id])
+
+  @@map("guest_sessions")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Loyalty & Gamification
+// ─────────────────────────────────────────────────────────────────────────────
 
 enum MembershipTier {
   SILVER
@@ -28,218 +72,17 @@ enum MembershipTier {
   DIAMOND
 }
 
-enum MembershipStatus {
-  ACTIVE
-  INACTIVE
-  SUSPENDED
-}
-
-enum PointTransactionType {
-  ONBOARDING
-  EARN
-  REDEEM
-  EXPIRE
-  ADJUST
-  REFERRAL
-}
-
-enum NotificationStatus {
-  PENDING
-  SENT
-  FAILED
-}
-
-// ─── Identity ────────────────────────────────────────────────────────────────
-
-model User {
-  id                String   @id @default(uuid()) @db.Uuid
-  lineUid           String?  @unique @map("line_uid")
-  displayName       String?  @map("display_name")
-  phoneNumber       String?  @map("phone_number")
-  profilePictureUrl String?  @map("profile_picture_url")
-  isGuest           Boolean  @default(false) @map("is_guest")
-  referralCode      String?  @unique @map("referral_code")
-  referredBy        String?  @db.Uuid @map("referred_by")
-  createdAt         DateTime @default(now()) @map("created_at")
-  updatedAt         DateTime @updatedAt @map("updated_at")
-
-  membership        Membership?
-  pointBalance      UserPointBalance?
-  pointTransactions PointTransaction[]
-  notificationLogs  NotificationLog[]
-  bookings          Booking[]
-  payments          Payment[]
-  creditWallet      CreditWallet?
-  subscriptions     Subscription[]
-
-  @@map("users")
-}
-
-// ─── Maid System ─────────────────────────────────────────────────────────────
-
-enum MaidTier {
-  TRAINEE
-  PRO
-  ELITE
-  MASTER
-}
-
-enum MaidStatus {
-  PENDING
-  ACTIVE
-  INACTIVE
-  SUSPENDED
-}
-
-model Maid {
-  id                String   @id @default(uuid()) @db.Uuid
-  userId            String?  @unique @db.Uuid @map("user_id")
-  fullName          String   @map("full_name")
-  phoneNumber       String   @map("phone_number")
-  profilePictureUrl String?  @map("profile_picture_url")
-  tier              MaidTier @default(TRAINEE)
-  baseRate          Decimal  @map("base_rate") @db.Decimal(10, 2)
-  rating            Float    @default(5.0)
-  jobCompleted      Int      @default(0) @map("job_completed")
-  demographics      Json?    @default("{}")
-  skills            MaidSkill[]
-  status            MaidStatus @default(PENDING)
-  createdAt         DateTime @default(now()) @map("created_at")
-  updatedAt         DateTime @updatedAt @map("updated_at")
-
-  bookings          Booking[]
-  onboarding        MaidOnboarding?
-
-  @@map("maids")
-}
-
-model MaidSkill {
-  id      String @id @default(uuid()) @db.Uuid
-  maidId  String @db.Uuid @map("maid_id")
-  skill   String // Cleaning, Cooking, Ironing
-  rating  Float  @default(0.0)
-  level   Int    @default(1)
-
-  maid    Maid   @relation(fields: [maidId], references: [id])
-
-  @@unique([maidId, skill])
-  @@map("maid_skills")
-}
-
-model MaidOnboarding {
-  id           String @id @default(uuid()) @db.Uuid
-  maidId       String @unique @db.Uuid @map("maid_id")
-  testScore    Int    @map("test_score")
-  passed       Boolean @default(false)
-  documentsUrl String? @map("documents_url")
-  status       String @default("PENDING") // PENDING, REVIEWING, APPROVED, REJECTED
-
-  maid         Maid   @relation(fields: [maidId], references: [id])
-
-  @@map("maid_onboarding")
-}
-
-// ─── Membership ───────────────────────────────────────────────────────────────
-
 model Membership {
-  id        String           @id @default(uuid()) @db.Uuid
-  userId    String           @unique @db.Uuid @map("user_id")
-  tier      MembershipTier   @default(SILVER)
-  status    MembershipStatus @default(ACTIVE)
-  joinedAt  DateTime         @default(now()) @map("joined_at")
-  expiresAt DateTime?        @map("expires_at")
+  id            String         @id @default(uuid()) @db.Uuid
+  userId        String         @unique @db.Uuid @map("user_id")
+  tier          MembershipTier @default(SILVER)
+  nextTierPoints Int           @default(500) @map("next_tier_points")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
 
-  user      User             @relation(fields: [userId], references: [id])
+  user          User           @relation(fields: [userId], references: [id])
 
   @@map("memberships")
 }
-
-// ─── Credit System ───────────────────────────────────────────────────────────
-
-model CreditWallet {
-  id              String   @id @default(uuid()) @db.Uuid
-  userId          String   @unique @db.Uuid @map("user_id")
-  balance         Int      @default(0)
-  updatedAt       DateTime @updatedAt @map("updated_at")
-
-  user            User     @relation(fields: [userId], references: [id])
-  transactions    CreditTransaction[]
-
-  @@map("credit_wallets")
-}
-
-model CreditTransaction {
-  id          String   @id @default(uuid()) @db.Uuid
-  walletId    String   @db.Uuid @map("wallet_id")
-  amount      Int      // Positive for top-up, negative for deduction
-  type        String   // TOP_UP, BOOKING, REFUND, EXPIRE
-  referenceId String?  @db.Uuid @map("reference_id")
-  description String?
-  createdAt   DateTime @default(now()) @map("created_at")
-
-  wallet      CreditWallet @relation(fields: [walletId], references: [id])
-
-  @@map("credit_transactions")
-}
-
-model Subscription {
-  id          String   @id @default(uuid()) @db.Uuid
-  userId      String   @db.Uuid @map("user_id")
-  packageId   String   @db.Uuid @map("package_id")
-  startDate   DateTime @default(now()) @map("start_date")
-  endDate     DateTime @map("end_date")
-  status      String   @default("ACTIVE") // ACTIVE, EXPIRED, CANCELLED
-
-  user        User     @relation(fields: [userId], references: [id])
-  package     Package  @relation(fields: [packageId], references: [id])
-
-  @@map("subscriptions")
-}
-
-model Package {
-  id          String   @id @default(uuid()) @db.Uuid
-  name        String
-  price       Decimal  @db.Decimal(10, 2)
-  credits     Int
-  durationDays Int      @map("duration_days")
-  isActive    Boolean  @default(true) @map("is_active")
-
-  subscriptions Subscription[]
-
-  @@map("packages")
-}
-
-// ─── Gamification ────────────────────────────────────────────────────────────
-
-model Campaign {
-  id          String   @id @default(uuid()) @db.Uuid
-  name        String
-  description String?
-  startDate   DateTime @map("start_date")
-  endDate     DateTime @map("end_date")
-  isActive    Boolean  @default(true) @map("is_active")
-  createdAt   DateTime @default(now()) @map("created_at")
-
-  rewards     MinigameReward[]
-
-  @@map("campaigns")
-}
-
-model MinigameReward {
-  id          String   @id @default(uuid()) @db.Uuid
-  campaignId  String   @db.Uuid @map("campaign_id")
-  name        String
-  type        String   // POINT, COUPON, CREDIT
-  value       Int
-  probability Float    // e.g., 0.05 for 5%
-  stock       Int      @default(-1) // -1 for unlimited
-
-  campaign    Campaign @relation(fields: [campaignId], references: [id])
-
-  @@map("minigame_rewards")
-}
-
-// ─── Points ───────────────────────────────────────────────────────────────────
 
 model UserPointBalance {
   id              String   @id @default(uuid()) @db.Uuid
@@ -254,57 +97,124 @@ model UserPointBalance {
   @@map("user_point_balances")
 }
 
+enum PointTransactionType {
+  BOOKING_EARNED
+  REVIEW_BONUS
+  ONBOARDING
+  REFERRAL
+  CAMPAIGN_REWARD
+  SPIN_WHEEL
+  REDEEMED
+}
+
 model PointTransaction {
   id          String               @id @default(uuid()) @db.Uuid
   userId      String               @db.Uuid @map("user_id")
-  type        PointTransactionType
   amount      Int
-  source      String
-  referenceId String?              @db.Uuid @map("reference_id")
+  type        PointTransactionType
+  source      String?              // e.g., "BOOKING", "CAMPAIGN"
+  referenceId String?              @map("reference_id") // ID of booking or campaign
   description String?
   createdAt   DateTime             @default(now()) @map("created_at")
 
   user        User                 @relation(fields: [userId], references: [id])
 
   @@index([userId])
-  @@index([type])
-  @@index([createdAt])
   @@map("point_transactions")
 }
 
 model PointRule {
-  id          String               @id @default(uuid()) @db.Uuid
-  ruleName    String               @unique @map("rule_name")
-  type        PointTransactionType
-  pointAmount Int                  @map("point_amount")
-  isActive    Boolean              @default(true) @map("is_active")
-  validFrom   DateTime             @default(now()) @map("valid_from")
-  validUntil  DateTime?            @map("valid_until")
+  id          String  @id @default(uuid()) @db.Uuid
+  ruleName    String  @unique @map("rule_name")
+  pointAmount Int     @map("point_amount")
+  isActive    Boolean @default(true) @map("is_active")
 
   @@map("point_rules")
 }
 
-// ─── Notifications ────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// Credit & Subscription Wallet
+// ─────────────────────────────────────────────────────────────────────────────
 
-model NotificationLog {
-  id         String             @id @default(uuid()) @db.Uuid
-  userId     String             @db.Uuid @map("user_id")
-  channel    String             @default("LINE") // LINE, WHATSAPP, WECHAT, SMS
-  eventType  String             @map("event_type")
-  message    String
-  status     NotificationStatus @default(PENDING)
-  retryCount Int                @default(0) @map("retry_count")
-  sentAt     DateTime?          @map("sent_at")
-  createdAt  DateTime           @default(now()) @map("created_at")
+model CreditWallet {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @unique @db.Uuid @map("user_id")
+  balance   Int      @default(0)
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  user       User               @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
 
-  @@index([userId])
-  @@index([status])
-  @@map("notification_logs")
+  @@map("credit_wallets")
 }
 
-// ─── Bookings ─────────────────────────────────────────────────────────────────
+model CreditPackage {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String
+  credits     Int
+  price       Decimal  @db.Decimal(10, 2)
+  description String?
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("credit_packages")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Maid / Professional Management
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum MaidTier {
+  TRAINEE
+  PRO
+  ELITE
+  MASTER
+}
+
+enum MaidStatus {
+  PENDING
+  ACTIVE
+  ON_JOB
+  INACTIVE
+}
+
+model Maid {
+  id                String     @id @default(uuid()) @db.Uuid
+  userId            String     @unique @db.Uuid @map("user_id")
+  fullName          String     @map("full_name")
+  phoneNumber       String     @map("phone_number")
+  profilePictureUrl String?    @map("profile_picture_url")
+  tier              MaidTier   @default(TRAINEE)
+  status            MaidStatus @default(PENDING)
+  rating            Float      @default(5.0)
+  jobCompleted      Int        @default(0) @map("job_completed")
+  baseRate          Decimal    @db.Decimal(10, 2) @map("base_rate")
+  testScore         Int?       @map("test_score")
+  demographics      Json?      @default("{}")
+  createdAt         DateTime   @default(now()) @map("created_at")
+  updatedAt         DateTime   @updatedAt @map("updated_at")
+
+  user              User       @relation(fields: [userId], references: [id])
+  skills            MaidSkill[]
+  bookings          Booking[]
+
+  @@map("maids")
+}
+
+model MaidSkill {
+  id     String @id @default(uuid()) @db.Uuid
+  maidId String @db.Uuid @map("maid_id")
+  skill  String // e.g., "GENERAL_CLEANING", "IRONING"
+  level  Int    @default(1) // 1-5 scale
+
+  maid   Maid   @relation(fields: [maidId], references: [id])
+
+  @@index([maidId])
+  @@map("maid_skills")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Bookings & Operations
+// ─────────────────────────────────────────────────────────────────────────────
 
 enum BookingStatus {
   PENDING
@@ -342,6 +252,12 @@ model Booking {
   rerollCount   Int           @default(0) @map("reroll_count")
   pointsEarned  Int           @default(0) @map("points_earned")
   referenceCode String        @unique @map("reference_code")
+  
+  // Live Tracking Fields
+  currentLat    Float?        @map("current_lat")
+  currentLng    Float?        @map("current_lng")
+  lastLocationAt DateTime?    @map("last_location_at")
+
   completedAt   DateTime?     @map("completed_at")
   createdAt     DateTime      @default(now()) @map("created_at")
   updatedAt     DateTime      @updatedAt @map("updated_at")
@@ -353,12 +269,44 @@ model Booking {
 
   @@index([userId])
   @@index([maidId])
-  @@index([status])
-  @@index([scheduledAt])
   @@map("bookings")
 }
 
-// ─── Post-Job & Behavior ──────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// Payment & Reviews
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum PaymentMethod {
+  CREDIT_CARD
+  PROMPTPAY
+  CREDIT_WALLET
+  TRUE_MONEY
+  SHOPEE_PAY
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  REFUNDED
+}
+
+model Payment {
+  id         String        @id @default(uuid()) @db.Uuid
+  bookingId  String?       @unique @db.Uuid @map("booking_id")
+  userId     String        @db.Uuid @map("user_id")
+  amount     Decimal       @db.Decimal(10, 2)
+  currency   String        @default("THB")
+  method     PaymentMethod
+  status     PaymentStatus @default(PENDING)
+  externalId String?       @map("external_transaction_id") // Omise/Gateway charge ID
+  metadata   Json?         @default("{}")
+  createdAt  DateTime      @default(now()) @map("created_at")
+
+  booking    Booking?      @relation(fields: [bookingId], references: [id])
+
+  @@map("payments")
+}
 
 model Review {
   id         String   @id @default(uuid()) @db.Uuid
@@ -370,21 +318,51 @@ model Review {
   createdAt  DateTime @default(now()) @map("created_at")
 
   booking    Booking  @relation(fields: [bookingId], references: [id])
+  user       User     @relation(fields: [userId], references: [id])
 
   @@map("reviews")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CMS & Campaigns
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Campaign {
+  id          String   @id @default(uuid()) @db.Uuid
+  title       String
+  description String?
+  startDate   DateTime @map("start_date")
+  endDate     DateTime @map("end_date")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  rewards     CampaignReward[]
+
+  @@map("campaigns")
+}
+
+model CampaignReward {
+  id         String   @id @default(uuid()) @db.Uuid
+  campaignId String   @db.Uuid @map("campaign_id")
+  rewardType String   // e.g., "COUPON", "POINTS"
+  value      Int
+  probability Float   @default(1.0) // For wheel spin probability
+
+  campaign   Campaign @relation(fields: [campaignId], references: [id])
+
+  @@map("campaign_rewards")
 }
 
 model CustomerTag {
   id        String   @id @default(uuid()) @db.Uuid
   userId    String   @db.Uuid @map("user_id")
-  tag       String   // e.g., "PETS", "NO_SHOES", "AGGRESSIVE"
+  tag       String
   createdAt DateTime @default(now()) @map("created_at")
 
-  @@index([userId])
+  user      User     @relation(fields: [userId], references: [id])
+
   @@map("customer_tags")
 }
-
-// ─── Manual Payment Verification ──────────────────────────────────────────────
 
 enum SlipStatus {
   PENDING
@@ -397,58 +375,28 @@ model SlipUpload {
   userId     String     @db.Uuid @map("user_id")
   imageUrl   String     @map("image_url")
   status     SlipStatus @default(PENDING)
-  amount     Decimal?   @db.Decimal(10, 2)
   verifiedAt DateTime?  @map("verified_at")
   createdAt  DateTime   @default(now()) @map("created_at")
+
+  user       User       @relation(fields: [userId], references: [id])
 
   @@map("slip_uploads")
 }
 
-// ─── Payments ─────────────────────────────────────────────────────────────────
+model NotificationLog {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid @map("user_id")
+  type      String   // "LINE", "SMS", "IN_APP"
+  title     String
+  message   String
+  status    String   // "SENT", "FAILED"
+  createdAt DateTime @default(now()) @map("created_at")
 
-enum PaymentStatus {
-  PENDING
-  PAID
-  FAILED
-  REFUNDED
-}
-
-enum PaymentProvider {
-  OMISE
-  MANUAL
-  CREDIT
-}
-
-model Payment {
-  id         String          @id @default(uuid()) @db.Uuid
-  bookingId  String?         @unique @db.Uuid @map("booking_id")
-  userId     String          @db.Uuid @map("user_id")
-  amount     Decimal         @db.Decimal(10, 2)
-  currency   String          @default("THB")
-  status     PaymentStatus   @default(PENDING)
-  provider   PaymentProvider @default(OMISE)
-  chargeId   String?         @map("charge_id")
-  metadata   Json            @default("{}")
-  paidAt     DateTime?       @map("paid_at")
-  refundedAt DateTime?       @map("refunded_at")
-  createdAt  DateTime        @default(now()) @map("created_at")
-  updatedAt  DateTime        @updatedAt @map("updated_at")
-
-  booking    Booking?        @relation(fields: [bookingId], references: [id])
-  user       User            @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
 
   @@index([userId])
   @@index([status])
-  @@map("payments")
-}
-
-model GuestSession {
-  guestUuid         String    @id @default(uuid()) @db.Uuid @map("guest_uuid")
-  createdAt         DateTime  @default(now()) @map("created_at")
-  expiredAt         DateTime  @map("expired_at")
-  convertedToUserId String?   @db.Uuid @map("converted_to_user_id")
-
-  @@map("guest_sessions")
+  @@map("notification_logs")
 }
 
 model TierRule {
@@ -459,4 +407,4 @@ model TierRule {
   benefits  Json   @default("{}")
 
   @@map("tier_rules")
-}
+  }

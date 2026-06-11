@@ -54,6 +54,24 @@ async def update_booking_status(
     # In a real app, we would verify if current_user is the maid assigned or an admin
     return await BookingService.update_status(booking_id, status)
 
+@router.patch("/{booking_id}/location")
+async def update_location(
+    booking_id: str,
+    lat: float = Body(..., embed=True),
+    lng: float = Body(..., embed=True),
+    current_user: User = Depends(deps.get_current_user)
+):
+    """Maid App: Update current GPS location of the maid during journey"""
+    return await BookingService.update_location(booking_id, lat, lng)
+
+@router.get("/{booking_id}/location")
+async def get_location(
+    booking_id: str,
+    current_user: User = Depends(deps.get_current_user)
+):
+    """Customer App: Get current GPS location and ETA of the assigned maid"""
+    return await BookingService.get_location(booking_id)
+
 @router.get("/me", response_model=List[BookingResponse])
 async def get_my_bookings(
     current_user: User = Depends(deps.get_current_user)

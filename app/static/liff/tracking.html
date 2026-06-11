@@ -49,6 +49,11 @@
         </header>
 
         <section class="px-6 mt-4">
+            <!-- Google Map Container -->
+            <div id="map-container" class="w-full h-64 bg-slate-100 rounded-[32px] overflow-hidden shadow-card border-4 border-white mb-6 hidden">
+                <div id="map" class="w-full h-full"></div>
+            </div>
+
             <div class="bg-white rounded-[24px] p-6 shadow-card border border-gray-100 mb-8">
                 <div class="flex items-center gap-4 mb-6">
                     <div class="w-16 h-16 rounded-2xl overflow-hidden bg-brand-surface">
@@ -155,5 +160,6 @@
 
 <script src="/static/liff/js/app.js?v=1.0.2"></script>
 <script src="/static/liff/js/tracking.js?v=1.0.2"></script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDh9WtOD0-n-Gl15t7UBTuhqtuGUudTeMc&callback=initTrackingMap" async defer></script>
 </body>
 </html>

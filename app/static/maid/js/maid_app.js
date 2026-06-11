@@ -4,6 +4,51 @@ let isPartnerActive = false;
 let accessToken = localStorage.getItem('momo_maid_token');
 let currentMaidData = null;
 let currentActiveJobId = null;
+let locationWatchId = null;
+
+function startLocationTracking(bookingId) {
+    if (!navigator.geolocation) {
+        console.error("Geolocation is not supported by this browser.");
+        return;
+    }
+
+    if (locationWatchId) navigator.geolocation.clearWatch(locationWatchId);
+
+    locationWatchId = navigator.geolocation.watchPosition(
+        async (position) => {
+            const { latitude, longitude } = position.coords;
+            try {
+                await fetch(`${API_BASE}/bookings/${bookingId}/location`, {
+                    method: 'PATCH',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${accessToken}` 
+                    },
+                    body: JSON.stringify({ lat: latitude, lng: longitude })
+                });
+                console.log("Location updated:", latitude, longitude);
+            } catch (e) {
+                console.error("Failed to update location", e);
+            }
+        },
+        (error) => {
+            console.error("Geolocation error:", error);
+        },
+        {
+            enableHighAccuracy: true,
+            maximumAge: 10000,
+            timeout: 5000
+        }
+    );
+}
+
+function stopLocationTracking() {
+    if (locationWatchId) {
+        navigator.geolocation.clearWatch(locationWatchId);
+        locationWatchId = null;
+        console.log("Location tracking stopped.");
+    }
+}
 
 // Inject Toast Container
 document.addEventListener("DOMContentLoaded", () => {
@@ -259,6 +304,9 @@ async function acceptJob(btn, jobId, type, location, customerName, notes, tagsSt
             
             activeSection.classList.remove('hidden');
             activeSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            
+            // Start Live Tracking
+            startLocationTracking(jobId);
         } else {
             throw new Error("Job might have been taken");
         }
@@ -310,6 +358,10 @@ async function nextStatus() {
         } else if (jobStep === 4) {
             document.getElementById('prog-4').classList.replace('bg-slate-600', 'bg-partner');
             showToast("Job Completed! Earnings added to your wallet.", "success");
+            
+            // Stop Live Tracking
+            stopLocationTracking();
+
             document.getElementById('active-job-section').classList.add('hidden');
             jobStep = 1; // reset
             currentActiveJobId = null;
