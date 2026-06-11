@@ -143,8 +143,31 @@ model CreditWallet {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   user      User     @relation(fields: [userId], references: [id])
+  transactions CreditTransaction[]
 
   @@map("credit_wallets")
+}
+
+enum CreditTransactionType {
+  TOP_UP
+  BOOKING
+  REFUND
+  ADJUSTMENT
+}
+
+model CreditTransaction {
+  id          String                @id @default(uuid()) @db.Uuid
+  walletId    String                @db.Uuid @map("wallet_id")
+  amount      Int
+  type        CreditTransactionType
+  referenceId String?               @map("reference_id")
+  description String?
+  createdAt   DateTime              @default(now()) @map("created_at")
+
+  wallet      CreditWallet          @relation(fields: [walletId], references: [id])
+
+  @@index([walletId])
+  @@map("credit_transactions")
 }
 
 model CreditPackage {

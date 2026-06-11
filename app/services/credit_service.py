@@ -17,6 +17,8 @@ SERVICE_CREDIT_MAPPING = {
     BookingType.IRONING: 12,
 }
 
+from prisma.enums import BookingType, CreditTransactionType
+
 class CreditService:
     @staticmethod
     async def get_wallet(user_id: str):
@@ -44,7 +46,7 @@ class CreditService:
                 data={
                     "walletId": wallet_id,
                     "amount": amount,
-                    "type": "TOP_UP",
+                    "type": CreditTransactionType.TOP_UP,
                     "referenceId": reference_id,
                     "description": f"Top-up {amount} credits"
                 }
@@ -75,7 +77,7 @@ class CreditService:
                 data={
                     "walletId": wallet_id,
                     "amount": -amount,
-                    "type": "BOOKING",
+                    "type": CreditTransactionType.BOOKING,
                     "referenceId": reference_id,
                     "description": description
                 }
@@ -102,7 +104,7 @@ class CreditService:
 
     @staticmethod
     async def get_packages():
-        return await db.package.find_many(where={"isActive": True})
+        return await db.creditpackage.find_many(where={"isActive": True})
 
     @staticmethod
     def calculate_credit_cost(service_type: BookingType, party_size: int, maid_tier: str) -> int:
