@@ -14,33 +14,35 @@ async function initTracking() {
     console.info("[Init] Starting Tracking Bootstrap...");
     await initCoreLiff(true);
     
-    // 1. Fetch Maps Config from Backend
+    // 1. Fetch Maps Config from Backend or use fallback
+    let api_key = "AIzaSyDh9WtOD0-n-Gl15t7UBTuhqtuGUudTeMc"; // Hardcoded fallback provided by user
     try {
         const res = await fetch(`${API_BASE}/line/config/maps`);
-        if (!res.ok) throw new Error(`HTTP Error ${res.status}`);
-        
-        const { api_key } = await res.json();
-        console.log("[Config] Maps API Key received:", api_key ? "VALID_KEY" : "MISSING");
-
-        if (api_key) {
-            // 2. Unhide container immediately for debugging/UX
-            const container = document.getElementById('map-container');
-            if (container) container.classList.remove('hidden');
-
-            // 3. Dynamic Script Injection (Handle Race Condition)
-            const script = document.createElement('script');
-            script.src = `https://maps.googleapis.com/maps/api/js?key=${api_key}&callback=initTrackingMap`;
-            script.async = true;
-            script.defer = true;
-            document.head.appendChild(script);
-            console.log("[Runtime] Google Maps SDK script dynamically injected.");
-        } else {
-            console.error("[Config] MAP_API is not defined in Backend ENV.");
-            showToast("Map Configuration Error", "error");
+        if (res.ok) {
+            const data = await res.json();
+            if (data.api_key) api_key = data.api_key;
         }
     } catch (e) {
-        console.error("[Bootstrap] Initialization failed:", e);
-        showToast("System failed to initialize maps", "error");
+        console.warn("[Config] Backend fetch failed, using hardcoded API key.");
+    }
+
+    console.log("[Config] Maps API Key configured.");
+
+    if (api_key) {
+        // 2. Unhide container immediately for debugging/UX
+        const container = document.getElementById('map-container');
+        if (container) container.classList.remove('hidden');
+
+        // 3. Dynamic Script Injection
+        const script = document.createElement('script');
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${api_key}&callback=initTrackingMap`;
+        script.async = true;
+        script.defer = true;
+        document.head.appendChild(script);
+        console.log("[Runtime] Google Maps SDK script dynamically injected.");
+    } else {
+        console.error("[Config] MAP_API is missing.");
+        showToast("Map Configuration Error", "error");
     }
 
     await fetchActiveBooking();
