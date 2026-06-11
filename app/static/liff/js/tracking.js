@@ -18,63 +18,23 @@ let animationFrameId = null;
 
 async function initTracking() {
     console.info("[Init] Starting Tracking Bootstrap...");
+    
+    if (window.updateDebug) updateDebug('liff', 'Initializing...');
     await initCoreLiff(true);
+    if (window.updateDebug) updateDebug('liff', 'Ready', '#4ade80');
     
-    // 1. Fetch Maps Config from Backend securely
+    // 1. Fetch Maps Config (Optional now but kept for consistency)
     let api_key = null;
-    try {
-        const res = await fetch(`${API_BASE}/line/config/maps`);
-        if (res.ok) {
-            const data = await res.json();
-            if (data.api_key) api_key = data.api_key;
-        } else {
-            console.error("[Config] Backend returned error status:", res.status);
-        }
-    } catch (e) {
-        console.error("[Config] Backend fetch failed for MAP_API:", e);
+    const meta = document.querySelector('meta[name="maps-api-key"]');
+    if (meta && meta.content && meta.content !== '__MAP_API__' && meta.content !== '') {
+        api_key = meta.content;
+        if (window.updateDebug) updateDebug('key', 'Detected', '#4ade80');
+    } else {
+        if (window.updateDebug) updateDebug('key', 'Missing', '#f87171');
     }
 
-    // Fallback: try reading a meta tag injected by server-side if fetch failed
-    if (!api_key) {
-        const meta = document.querySelector('meta[name="maps-api-key"]');
-        if (meta && meta.content && meta.content !== '__MAP_API__' && meta.content !== '') {
-            api_key = meta.content;
-            console.warn('[Config] Using fallback MAP_API from meta tag.');
-        }
-    }
-
-    if (!api_key) {
-        console.error("[Config] FATAL: MAP_API Key is MISSING. Please set 'MAP_API' variable in Railway Dashboard.");
-        showToast("Missing Maps API Key. Please check Railway Variables.", "error");
-        
-        const mapEl = document.getElementById("map");
-        if (mapEl) {
-            mapEl.innerHTML = '<div class="p-4 text-center text-red-500 font-bold">API Key Missing<br><span class="text-[10px] text-slate-400">Set MAP_API in Railway Dashboard</span></div>';
-            mapEl.className = 'w-full h-full flex items-center justify-center bg-red-50';
-        }
-        return;
-    }
-
-    console.log("[Config] Maps API Key detected. Injecting SDK...");
-
-    // 3. Dynamic Script Injection (with geometry library for rotation math)
-    const script = document.createElement('script');
-    // Added libraries=maps,marker,geometry to ensure compatibility with new Google Maps standards
-    const sdkUrl = `https://maps.googleapis.com/maps/api/js?key=${api_key}&libraries=maps,marker,geometry&callback=initTrackingMap`;
-    script.src = sdkUrl;
-    script.async = true;
-    script.defer = true;
-    
-    console.debug("[SDK] Requesting URL:", sdkUrl.replace(api_key, "AIzaSy...REDACTED"));
-    
-    script.onerror = function (ev) {
-        console.error('[Runtime] Google Maps SDK failed to load. Check API Key validity, billing, and Referrer restrictions.', ev);
-        showToast('Google Maps SDK Load Failed', 'error');
-    };
-    script.onload = function() {
-        console.info("[SDK] Script tag loaded in DOM.");
-    };
-    document.head.appendChild(script);
+    // We no longer inject the script here as it's in tracking.html
+    if (window.updateDebug) updateDebug('sdk', 'Loading...');
 
     await fetchActiveBooking();
 }
@@ -82,6 +42,10 @@ async function initTracking() {
 // Global Callback for Google Maps SDK
 window.initTrackingMap = function() {
     console.info("[SDK] Google Maps Callback Fired.");
+    if (window.updateDebug) {
+        updateDebug('sdk', 'Success', '#4ade80');
+        updateDebug('cb', 'Fired', '#4ade80');
+    }
     
     // Use customer position or maid position as center
     const centerPos = customerPos || currentMaidPos || { lat: 13.7563, lng: 100.5018 };

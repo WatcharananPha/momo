@@ -163,9 +163,32 @@
             </svg>
         </a>
     </nav>
-</div>
 
-<script src="/static/liff/js/app.js?v=1.0.2"></script>
-<script src="/static/liff/js/tracking.js?v=1.0.2"></script>
-</body>
-</html>
+    <!-- Debug Overlay (Temporary for troubleshooting) -->
+    <div id="debug-overlay" class="fixed bottom-[80px] left-1/2 -translate-x-1/2 w-[90%] max-w-[400px] bg-black/80 backdrop-blur-md text-[10px] text-white p-3 rounded-xl z-50 font-mono pointer-events-none">
+        <div class="flex justify-between mb-1"><span>LIFF:</span> <span id="debug-liff" class="text-yellow-400">Waiting...</span></div>
+        <div class="flex justify-between mb-1"><span>API Key:</span> <span id="debug-key" class="text-yellow-400">Waiting...</span></div>
+        <div class="flex justify-between mb-1"><span>SDK Load:</span> <span id="debug-sdk" class="text-yellow-400">Waiting...</span></div>
+        <div class="flex justify-between"><span>Callback:</span> <span id="debug-cb" class="text-yellow-400">Waiting...</span></div>
+    </div>
+    </div>
+
+    <script>
+    // Global Debug Logger
+    window.updateDebug = function(id, msg, color = '#fbbf24') {
+        const el = document.getElementById('debug-' + id);
+        if (el) {
+            el.textContent = msg;
+            el.style.color = color;
+        }
+    }
+    </script>
+
+    <script src="/static/liff/js/app.js?v=1.0.3"></script>
+    <script src="/static/liff/js/tracking.js?v=1.0.3"></script>
+
+    <!-- Load SDK immediately with server-injected key -->
+    <script src="https://maps.googleapis.com/maps/api/js?key=__MAP_API__&libraries=maps,marker,geometry&callback=initTrackingMap" async defer onerror="updateDebug('sdk', 'Error', '#f87171')"></script>
+
+    </body>
+    </html>
