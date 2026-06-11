@@ -116,6 +116,16 @@ async function initCoreLiff(requireAuth = true) {
     }
 }
 
+window.handleGetStarted = function() {
+    console.log("Onboarding: Get Started clicked");
+    if (!liff.isLoggedIn()) {
+        liff.login({ redirectUri: window.location.origin + "/liff" });
+    } else {
+        const intro = document.getElementById('intro-page');
+        if (intro) intro.style.display = 'none';
+    }
+};
+
 async function loginToBackend(idToken) {
     if (!idToken) return;
     try {

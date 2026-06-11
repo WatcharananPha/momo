@@ -48,14 +48,15 @@ function startBooking(type) {
     document.getElementById('app-content').style.overflow = 'hidden';
 }
 
-function closeModal() {
+window.closeModal = function() {
     const modal = document.getElementById('booking-modal');
+    if (!modal) return;
     modal.classList.remove('open');
     setTimeout(() => {
         modal.classList.add('hidden');
         document.getElementById('app-content').style.overflow = 'auto';
     }, 300);
-}
+};
 
 // Click outside to close modal
 document.getElementById('booking-modal').addEventListener('click', function(e) {

@@ -272,8 +272,17 @@ function updateTrackingUI(booking) {
             }
         }
         
+        // Line fill animation
         if (line) {
-            line.style.width = (i < currentStep) ? '100%' : (i === currentStep ? '30%' : '0%');
+            if (i < currentStep) {
+                line.style.width = '100%';
+            } else if (i === currentStep) {
+                // If we are on this step, show a partial fill or zero depending on UX preference
+                // Standard Grab shows previous lines full, current line empty until progress starts
+                line.style.width = '0%';
+            } else {
+                line.style.width = '0%';
+            }
         }
 
         if (label) {

@@ -92,21 +92,27 @@
 
             <!-- Enhanced Progress Steps UI (Grab Style) -->
             <div class="px-8 mb-8">
-                <div class="flex items-center mb-2">
-                    <div class="step-circle done" id="step-node-1">
-                        <svg class="w-4 h-4 fill-current" viewBox="0 0 20 20"><path d="M0 11l2-2 5 5L18 3l2 2L7 18z"/></svg>
+                <div class="flex items-center mb-3">
+                    <!-- Step 1 -->
+                    <div class="flex-1 flex items-center">
+                        <div class="step-circle active" id="step-node-1">1</div>
+                        <div class="step-line"><div class="step-line-fill" id="step-line-1"></div></div>
                     </div>
-                    <div class="step-line"><div class="step-line-fill" id="step-line-1"></div></div>
-                    
-                    <div class="step-circle todo" id="step-node-2">2</div>
-                    <div class="step-line"><div class="step-line-fill" id="step-line-2"></div></div>
-                    
-                    <div class="step-circle todo" id="step-node-3">3</div>
-                    <div class="step-line"><div class="step-line-fill" id="step-line-3"></div></div>
-                    
+                    <!-- Step 2 -->
+                    <div class="flex-1 flex items-center">
+                        <div class="step-circle todo" id="step-node-2">2</div>
+                        <div class="step-line"><div class="step-line-fill" id="step-line-2"></div></div>
+                    </div>
+                    <!-- Step 3 -->
+                    <div class="flex-1 flex items-center">
+                        <div class="step-circle todo" id="step-node-3">3</div>
+                        <div class="step-line"><div class="step-line-fill" id="step-line-3"></div></div>
+                    </div>
+                    <!-- Step 4 -->
                     <div class="step-circle todo" id="step-node-4">4</div>
                 </div>
-                <div class="flex justify-between text-center">
+                
+                <div class="flex justify-between text-center px-1">
                     <span class="w-1/4 text-[10px] font-black uppercase tracking-tighter text-brand" id="label-1">Confirmed</span>
                     <span class="w-1/4 text-[10px] font-black uppercase tracking-tighter text-ink-light" id="label-2">Arrived</span>
                     <span class="w-1/4 text-[10px] font-black uppercase tracking-tighter text-ink-light" id="label-3">In-Progress</span>
