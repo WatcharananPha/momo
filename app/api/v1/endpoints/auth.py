@@ -58,3 +58,13 @@ async def login_line(data: LineLoginDto):
         "is_guest": False,
         "is_new_user": result["is_new_user"]
     }
+
+@router.post("/seed-database-temp")
+async def seed_database_temp():
+    """Temporary endpoint to seed the database on Railway"""
+    import os
+    result = os.system("python3 seed.py")
+    if result == 0:
+        return {"status": "success", "message": "Database seeded"}
+    else:
+        raise HTTPException(status_code=500, detail="Seeding failed")
