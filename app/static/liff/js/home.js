@@ -171,13 +171,9 @@ window.spinWheel = function() {
     }, 3500);
 };
 
-function openPackages() {
-    const el = document.getElementById('packages-modal');
-    if (el) {
-        el.classList.remove('hidden');
-        el.classList.add('flex');
-    }
-}
+window.openPackages = function() {
+    showToast("Payment System Under Development </dev>", "info");
+};
 
 function closePackages() {
     const el = document.getElementById('packages-modal');
