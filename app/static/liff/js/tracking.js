@@ -11,8 +11,6 @@ let lastRouteTime = 0;
 let currentMaidPos = null;
 let customerPos = null; 
 let animationFrameId = null;
-let trackingFailures = 0;
-const MAX_TRACKING_FAILURES = 3;
 
 /**
  * Senior Dev Insights: Bootstrap sequence and Lifecycle management.
@@ -44,7 +42,7 @@ window.initTrackingMap = function() {
             zoom: 16,
             center: centerPos,
             disableDefaultUI: true,
-            padding: { bottom: 300 }, // Shift center up significantly
+            padding: { bottom: 340 }, // Shift center up significantly
             styles: [
                 { "featureType": "poi", "stylers": [{ "visibility": "off" }] },
                 { "featureType": "transit", "stylers": [{ "visibility": "off" }] }
@@ -113,7 +111,6 @@ async function fetchActiveBooking() {
             const bookings = await res.json();
             if (bookings.length > 0) {
                 const booking = bookings[0];
-                // Check if the most recent booking is actually trackable
                 const trackableStatuses = ['CONFIRMED', 'ARRIVED', 'IN_PROGRESS'];
                 
                 if (trackableStatuses.includes(booking.status)) {
@@ -187,7 +184,6 @@ async function handleNoActiveOrder() {
         );
     }
 }
-
 
 function startLiveTracking() {
     if (trackingInterval) clearInterval(trackingInterval);
@@ -265,7 +261,6 @@ async function updateMaidLocation() {
             headers: { 'Authorization': `Bearer ${accessToken}` }
         });
         if (res.ok) {
-            trackingFailures = 0; // reset on success
             const data = await res.json();
             if (data.customerLat && data.customerLng) {
                 customerPos = { lat: data.customerLat, lng: data.customerLng };
@@ -283,23 +278,9 @@ async function updateMaidLocation() {
             }
             
             if (data.status === 'COMPLETED' || data.status === 'CANCELLED') stopLiveTracking();
-        } else {
-            // Non-OK response (4xx/5xx) — log and increment failure counter
-            console.warn('[Tracking] Update HTTP error', res.status);
-            trackingFailures++;
-            if (trackingFailures >= MAX_TRACKING_FAILURES) {
-                showToast('ระบบติดตามชั่วคราวไม่สามารถใช้งานได้ กรุณาลองใหม่ในภายหลัง', 'error');
-                stopLiveTracking();
-            }
-            return;
         }
     } catch (e) {
         console.error("[Tracking] Update failed:", e);
-        trackingFailures++;
-        if (trackingFailures >= MAX_TRACKING_FAILURES) {
-            showToast('ระบบติดตามชั่วคราวไม่สามารถใช้งานได้ กรุณาลองใหม่ในภายหลัง', 'error');
-            stopLiveTracking();
-        }
     }
 }
 
@@ -371,7 +352,7 @@ function updateTrackingUI(booking) {
 // Draggable Bottom Sheet with 3 Snapping States
 // Units are pixels visible from the bottom (negative translateY)
 const STATE = {
-    COLLAPSED: -50,   // Just handle & margin
+    COLLAPSED: -100,  // Just handle & Live Tracking text
     DEFAULT: -340,    // Standard view
     EXPANDED: -540    // Detailed view
 };
@@ -383,19 +364,16 @@ let isDragging = false;
 function initDraggableSheet() {
     const sheet = document.getElementById('bottom-sheet');
     const handle = document.getElementById('drag-handle-container');
-    const fab = document.getElementById('fab-container');
 
     if (!sheet || !handle) return;
 
     // Initial positioning
     sheet.style.transform = `translateY(${basePos}px)`;
-    if (fab) fab.style.transform = `translateY(${basePos + 340}px)`;
 
     handle.addEventListener('touchstart', (e) => {
         startY = e.touches[0].clientY;
         isDragging = true;
         sheet.style.transition = 'none';
-        if (fab) fab.style.transition = 'none';
     }, { passive: true });
 
     document.addEventListener('touchmove', (e) => {
@@ -409,7 +387,6 @@ function initDraggableSheet() {
         if (move < STATE.EXPANDED) move = STATE.EXPANDED + (move - STATE.EXPANDED) * 0.2;
         
         sheet.style.transform = `translateY(${move}px)`;
-        if (fab) fab.style.transform = `translateY(${move + 340}px)`;
     }, { passive: true });
 
     document.addEventListener('touchend', (e) => {
@@ -417,7 +394,6 @@ function initDraggableSheet() {
         isDragging = false;
         
         sheet.style.transition = 'transform 0.5s cubic-bezier(0.16, 1, 0.3, 1)';
-        if (fab) fab.style.transition = 'transform 0.5s cubic-bezier(0.16, 1, 0.3, 1)';
         
         const finalY = e.changedTouches[0].clientY;
         const deltaY = finalY - startY;
@@ -435,12 +411,12 @@ function initDraggableSheet() {
         }
 
         sheet.style.transform = `translateY(${target}px)`;
-        if (fab) fab.style.transform = `translateY(${target + 340}px)`;
         basePos = target;
         
-        // Update map padding dynamically if needed
+        // Update map padding dynamically
         if (map) {
-            map.setOptions({ padding: { bottom: Math.abs(target) > 50 ? 300 : 50 } });
+            // Adjust map padding based on sheet position to keep center clear
+            map.setOptions({ padding: { bottom: Math.abs(target) } });
         }
     });
 }

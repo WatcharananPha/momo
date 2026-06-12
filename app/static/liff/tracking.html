@@ -114,18 +114,18 @@
             </a>
         </div>
 
-        <!-- FAB: Recenter -->
-        <div class="absolute right-6 z-20 pointer-events-auto transition-all duration-300" id="fab-container" style="bottom: calc(300px + env(safe-area-inset-bottom, 24px));">
-            <button id="recenter-btn" class="w-14 h-14 bg-brand text-white rounded-[24px] flex items-center justify-center shadow-2xl btn-press">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="3.5" viewBox="0 0 24 24">
-                    <path d="M12 2v2m0 16v2M4 12H2m20 0h-2"></path><circle cx="12" cy="12" r="3.5"></circle>
-                </svg>
-            </button>
-        </div>
-
         <!-- Layer 2: Interactive Bottom Sheet -->
         <div id="bottom-sheet">
             
+            <!-- FAB: Recenter (Moved inside bottom sheet for auto-tracking) -->
+            <div class="absolute right-6 z-20 pointer-events-auto" id="fab-container" style="top: -76px;">
+                <button id="recenter-btn" class="w-14 h-14 bg-brand text-white rounded-[24px] flex items-center justify-center shadow-2xl btn-press">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="3.5" viewBox="0 0 24 24">
+                        <path d="M12 2v2m0 16v2M4 12H2m20 0h-2"></path><circle cx="12" cy="12" r="3.5"></circle>
+                    </svg>
+                </button>
+            </div>
+
             <!-- Draggable Handle -->
             <div id="drag-handle-container" class="w-full pt-4 pb-2 cursor-grab active:cursor-grabbing">
                 <div class="w-12 h-1.5 bg-slate-200 rounded-full mx-auto shadow-inner"></div>
