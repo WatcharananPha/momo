@@ -3,6 +3,29 @@ const API_BASE = window.location.origin + "/api/v1";
 let userProfile = null;
 let accessToken = localStorage.getItem('momo_token');
 
+// Global error capture: surface unhandled promise rejections and window errors
+window.addEventListener('unhandledrejection', function (event) {
+    try {
+        console.error('[UnhandledRejection]', event.reason);
+        // show a compact toast so end-user/dev sees immediate feedback
+        if (typeof showToast === 'function') {
+            const msg = (event.reason && event.reason.message) ? event.reason.message : String(event.reason);
+            showToast(`Unhandled: ${msg}`, 'error');
+        }
+    } catch (e) { console.error('Error reporting unhandledrejection', e); }
+});
+
+window.addEventListener('error', function (event) {
+    try {
+        console.error('[WindowError]', event.message || event.error);
+    } catch (e) { /* ignore */ }
+});
+
+// Log cross-document messages to help triage message-channel issues
+window.addEventListener('message', function (ev) {
+    try { console.debug('[WindowMessage]', ev.origin, ev.data); } catch (e) { /* ignore */ }
+});
+
 // Immediate container creation
 (function() {
     const container = document.createElement('div');

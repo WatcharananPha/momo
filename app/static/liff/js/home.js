@@ -137,6 +137,21 @@ document.getElementById('final-confirm-btn').onclick = async () => {
             closeModal();
             showToast("Success! Tracking started.", "success");
             setTimeout(() => { location.href = '/liff/tracking'; }, 1500);
+        } else {
+            // Parse error body for helpful UX
+            let err = null;
+            try { err = await res.json(); } catch (e) { err = { detail: 'Unknown error' }; }
+            const detail = err && err.detail ? err.detail : 'Error confirming booking';
+            console.warn('Final-confirm failed', res.status, detail);
+
+            // Specific handling for insufficient credit
+            if (res.status === 400 && String(detail).toLowerCase().includes('insufficient')) {
+                showToast('ยอดเครดิตไม่เพียงพอ กรุณาเติมเงินก่อนยืนยันการจอง', 'error');
+                // Redirect user to wallet/top-up after brief pause
+                setTimeout(() => { location.href = '/liff/wallet'; }, 1000);
+            } else {
+                showToast(detail, 'error');
+            }
         }
     } finally { btn.disabled = false; }
 };
