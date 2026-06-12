@@ -83,7 +83,7 @@ h1, h2, h3, h4 {
     filter: brightness(0.92);
 }
 
-/* Draggable Sheet Transition */
+/* Draggable Sheet Transition */    
 .sheet-transition {
     transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }

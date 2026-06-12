@@ -198,19 +198,12 @@ class BookingService:
         logger = logging.getLogger(__name__)
         try:
             booking = await db.booking.find_unique(
-                where={"id": booking_id},
-                select={
-                    "currentLat": True,
-                    "currentLng": True,
-                    "customerLat": True,
-                    "customerLng": True,
-                    "lastLocationAt": True,
-                    "status": True
-                }
+                where={"id": booking_id}
             )
             if not booking:
                 raise HTTPException(status_code=404, detail="Booking not found")
             return booking
         except Exception as e:
-            logger.exception("BookingService.get_location failed for %s", booking_id)
+            if not isinstance(e, HTTPException):
+                logger.exception("BookingService.get_location failed for %s", booking_id)
             raise
