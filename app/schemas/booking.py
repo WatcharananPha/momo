@@ -49,6 +49,10 @@ class BookingResponse(BaseModel):
     reroll_count: int
     reference_code: str
     maid: Optional[MaidProfileResponse] = None
+    customer_lat: Optional[float] = None
+    customer_lng: Optional[float] = None
+    current_lat: Optional[float] = None
+    current_lng: Optional[float] = None
     created_at: datetime
     updated_at: datetime
 

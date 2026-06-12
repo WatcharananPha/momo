@@ -2,6 +2,7 @@ let selectedRating = 5;
 let currentBookingId = null;
 let map = null;
 let maidMarker = null;
+let customerMarker = null;
 let trackingInterval = null;
 
 // Routing & Animation variables
@@ -22,11 +23,81 @@ async function initTracking() {
     await fetchActiveBooking();
 }
 
+function updateCustomerMarker() {
+    if (!map || !customerPos) return;
+    if (!customerMarker) {
+        customerMarker = new google.maps.Marker({
+            map: map,
+            title: "Your Location",
+            icon: {
+                path: 'M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z',
+                scale: 1.5,
+                fillColor: "#1d4ed8",
+                fillOpacity: 1,
+                strokeWeight: 2,
+                strokeColor: "#ffffff",
+                anchor: new google.maps.Point(12, 22)
+            }
+        });
+    }
+    customerMarker.setPosition(customerPos);
+    customerMarker.setVisible(true);
+}
+
+function updateMaidMarker(newPos) {
+    if (!map || !newPos) return;
+    if (!maidMarker) {
+        maidMarker = new google.maps.Marker({
+            map: map,
+            title: "Maid Location",
+            icon: {
+                path: 'M17.402,0H5.643C2.526,0,0,3.467,0,6.584v34.804c0,3.116,2.526,5.644,5.643,5.644h11.759c3.116,0,5.644-2.527,5.644-5.644 V6.584C23.044,3.467,20.518,0,17.402,0z M22.057,14.188v11.665l-2.729,0.351v-4.806L22.057,14.188z M20.625,10.773 c-1.016,3.9-2.219,8.51-2.219,8.51H4.638l-2.222-8.51C2.415,10.773,11.3,7.755,20.625,10.773z M3.748,21.713v4.492l-2.73-0.349 V14.502L3.748,21.713z M1.018,37.938V27.579l2.73,0.343v8.196L1.018,37.938z M2.575,40.882l2.218-3.336h13.771l2.219,3.336H2.575z M19.328,35.805v-7.872l2.729-0.355v10.048L19.328,35.805z',
+                scale: 0.9,
+                fillColor: "#059669",
+                fillOpacity: 1,
+                strokeWeight: 2,
+                strokeColor: "#ffffff",
+                rotation: 0,
+                anchor: new google.maps.Point(11, 23)
+            }
+        });
+    }
+    
+    const oldPos = currentMaidPos;
+    if (!oldPos) {
+        currentMaidPos = newPos;
+        maidMarker.setPosition(newPos);
+        maidMarker.setVisible(true);
+    } else {
+        smoothMoveMarker(maidMarker, oldPos, newPos);
+    }
+}
+
+function adjustMapBounds() {
+    if (!map) return;
+    if (customerPos && currentMaidPos) {
+        const bounds = new google.maps.LatLngBounds();
+        bounds.extend(customerPos);
+        bounds.extend(currentMaidPos);
+        map.fitBounds(bounds);
+        
+        const listener = google.maps.event.addListener(map, "idle", () => {
+            if (map.getZoom() > 16) map.setZoom(16);
+            google.maps.event.removeListener(listener);
+        });
+    } else if (customerPos) {
+        map.setCenter(customerPos);
+        map.setZoom(16);
+    } else if (currentMaidPos) {
+        map.setCenter(currentMaidPos);
+        map.setZoom(16);
+    }
+}
+
 // Global Callback for Google Maps SDK
 window.initTrackingMap = function() {
     console.info("[SDK] Google Maps Callback Fired.");
     
-    // Default to Bangkok if nothing else
     const centerPos = customerPos || currentMaidPos || { lat: 13.7563, lng: 100.5018 };
     
     try {
@@ -42,14 +113,13 @@ window.initTrackingMap = function() {
             zoom: 16,
             center: centerPos,
             disableDefaultUI: true,
-            padding: { bottom: 340 }, // Shift center up significantly
+            padding: { bottom: 340 },
             styles: [
                 { "featureType": "poi", "stylers": [{ "visibility": "off" }] },
                 { "featureType": "transit", "stylers": [{ "visibility": "off" }] }
             ]
         });
 
-        // Setup Routing Services
         directionsService = new google.maps.DirectionsService();
         directionsRenderer = new google.maps.DirectionsRenderer({
             map: map,
@@ -61,31 +131,18 @@ window.initTrackingMap = function() {
             }
         });
 
-        // Animated Marker using SVG path
-        maidMarker = new google.maps.Marker({
-            position: currentMaidPos || centerPos,
-            map: map,
-            title: "Maid Location",
-            visible: !!currentMaidPos,
-            icon: {
-                path: 'M17.402,0H5.643C2.526,0,0,3.467,0,6.584v34.804c0,3.116,2.526,5.644,5.643,5.644h11.759c3.116,0,5.644-2.527,5.644-5.644 V6.584C23.044,3.467,20.518,0,17.402,0z M22.057,14.188v11.665l-2.729,0.351v-4.806L22.057,14.188z M20.625,10.773 c-1.016,3.9-2.219,8.51-2.219,8.51H4.638l-2.222-8.51C2.415,10.773,11.3,7.755,20.625,10.773z M3.748,21.713v4.492l-2.73-0.349 V14.502L3.748,21.713z M1.018,37.938V27.579l2.73,0.343v8.196L1.018,37.938z M2.575,40.882l2.218-3.336h13.771l2.219,3.336H2.575z M19.328,35.805v-7.872l2.729-0.355v10.048L19.328,35.805z',
-                scale: 0.9,
-                fillColor: "#059669",
-                fillOpacity: 1,
-                strokeWeight: 2,
-                strokeColor: "#ffffff",
-                rotation: 0,
-                anchor: new google.maps.Point(11, 23)
-            }
-        });
+        if (customerPos) {
+            updateCustomerMarker();
+        }
+        if (currentMaidPos) {
+            updateMaidMarker(currentMaidPos);
+        }
+        adjustMapBounds();
         
-        // Bind Recenter
         const recenterBtn = document.getElementById('recenter-btn');
         if (recenterBtn) {
             recenterBtn.onclick = () => {
-                const target = currentMaidPos || centerPos;
-                map.panTo(target);
-                map.setZoom(17);
+                adjustMapBounds();
             };
         }
 
@@ -117,9 +174,20 @@ async function fetchActiveBooking() {
                     if (booking.customerLat && booking.customerLng) {
                         customerPos = { lat: booking.customerLat, lng: booking.customerLng };
                     }
+                    if (booking.currentLat && booking.currentLng) {
+                        currentMaidPos = { lat: booking.currentLat, lng: booking.currentLng };
+                    }
                     currentBookingId = booking.id;
                     updateTrackingUI(booking);
                     startLiveTracking();
+
+                    if (map) {
+                        updateCustomerMarker();
+                        if (currentMaidPos) {
+                            updateMaidMarker(currentMaidPos);
+                        }
+                        adjustMapBounds();
+                    }
                 } else {
                     handleNoActiveOrder();
                 }
@@ -140,14 +208,12 @@ async function fetchActiveBooking() {
 async function handleNoActiveOrder() {
     console.info("[UX] No active order found. Falling back to User Location.");
     
-    // Update UI to Idle State
     document.getElementById('status-title').textContent = "Ready for Service";
     document.getElementById('distance-display').innerHTML = '<span class="w-2 h-2 bg-slate-300 rounded-full inline-block"></span> No active tracking';
     document.getElementById('eta-display-small').textContent = "-- min";
     document.getElementById('maid-name').textContent = "Momo Professional";
     document.getElementById('maid-tier').textContent = "• Standing by";
     
-    // Request User Geolocation to center map
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
             (position) => {
@@ -161,20 +227,7 @@ async function handleNoActiveOrder() {
                 if (map) {
                     map.setCenter(userPos);
                     map.setZoom(15);
-                    // Add a simple blue dot or marker for user
-                    new google.maps.Marker({
-                        position: userPos,
-                        map: map,
-                        icon: {
-                            path: google.maps.SymbolPath.CIRCLE,
-                            scale: 8,
-                            fillColor: "#3b82f6",
-                            fillOpacity: 1,
-                            strokeWeight: 3,
-                            strokeColor: "#ffffff",
-                        },
-                        title: "Your Location"
-                    });
+                    updateCustomerMarker();
                 }
             },
             (error) => {
@@ -243,8 +296,9 @@ function smoothMoveMarker(marker, startPos, endPos, durationMs = 2000) {
 
         marker.setPosition(currentPosLatLng);
         
-        // Pan map smoothly to follow marker
-        map.panTo(currentPosLatLng);
+        if (!customerPos) {
+            map.panTo(currentPosLatLng);
+        }
 
         if (progress < 1) animationFrameId = requestAnimationFrame(animate);
         else currentMaidPos = endPos;
@@ -264,16 +318,12 @@ async function updateMaidLocation() {
             const data = await res.json();
             if (data.customerLat && data.customerLng) {
                 customerPos = { lat: data.customerLat, lng: data.customerLng };
+                updateCustomerMarker();
             }
 
-            if (data.currentLat && data.currentLng && map && maidMarker) {
+            if (data.currentLat && data.currentLng && map) {
                 const newPos = { lat: data.currentLat, lng: data.currentLng };
-                if (!currentMaidPos) {
-                    currentMaidPos = newPos;
-                    maidMarker.setPosition(newPos);
-                    maidMarker.setVisible(true);
-                }
-                smoothMoveMarker(maidMarker, currentMaidPos, newPos);
+                updateMaidMarker(newPos);
                 if (customerPos) calculateAndDisplayRoute(newPos, customerPos);
             }
             
