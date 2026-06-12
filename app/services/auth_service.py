@@ -10,13 +10,7 @@ class AuthService:
         guest_uuid = str(uuid.uuid4())
         expires_at = datetime.utcnow() + timedelta(days=1)
         
-        await db.guestsession.create(
-            data={
-                "guestUuid": guest_uuid,
-                "expiredAt": expires_at
-            }
-        )
-        
+        # We need a user to generate the token
         user = await db.user.create(
             data={
                 "isGuest": True,
@@ -24,11 +18,19 @@ class AuthService:
             }
         )
         
+        token = create_access_token(data={"sub": user.id, "isGuest": True})
+        
+        await db.guestsession.create(
+            data={
+                "guestUuid": guest_uuid,
+                "token": token,
+                "expiresAt": expires_at
+            }
+        )
+        
         # Initialize wallet and points for guest too
         await db.creditwallet.create(data={"userId": user.id, "balance": 0})
         await db.userpointbalance.create(data={"userId": user.id})
-        
-        token = create_access_token(data={"sub": user.id, "isGuest": True})
         
         return {
             "guest_uuid": guest_uuid,

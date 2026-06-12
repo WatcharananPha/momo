@@ -124,7 +124,7 @@ class CreditService:
     async def purchase_subscription(user_id: str, package_id: str, omise_token: str = None):
         from app.services.payment_service import PaymentService
         
-        pkg = await db.package.find_unique(where={"id": package_id})
+        pkg = await db.creditpackage.find_unique(where={"id": package_id})
         if not pkg:
             raise HTTPException(status_code=404, detail="Package not found")
             
@@ -138,34 +138,25 @@ class CreditService:
             description=f"Purchase Package: {pkg.name}"
         )
         
-        start_date = datetime.utcnow()
-        end_date = start_date + timedelta(days=pkg.durationDays)
+        charge_id = str(charge.get("id")) if isinstance(charge, dict) else charge.id
         
-        async with db.tx() as transaction:
-            sub = await transaction.subscription.create(
-                data={
-                    "userId": user_id,
-                    "packageId": package_id,
-                    "startDate": start_date,
-                    "endDate": end_date,
-                    "status": "ACTIVE"
-                }
-            )
-            
-            # Record payment
-            await transaction.payment.create(
-                data={
-                    "userId": user_id,
-                    "bookingId": None, # This is a package purchase, not a booking
-                    "amount": pkg.price,
-                    "status": "PAID",
-                    "provider": "OMISE",
-                    "chargeId": str(charge.get("id")) if isinstance(charge, dict) else charge.id,
-                    "metadata": "{}"
-                }
-            )
+        # Record payment
+        await db.payment.create(
+            data={
+                "userId": user_id,
+                "amount": pkg.price,
+                "method": "CREDIT_CARD",
+                "status": "SUCCESS",
+                "externalId": charge_id,
+                "metadata": "{}"
+            }
+        )
             
         # Top up credits
-        await CreditService.top_up(user_id, pkg.credits, sub.id)
+        wallet = await CreditService.top_up(user_id, pkg.credits, charge_id)
         
-        return sub
+        return {
+            "status": "success",
+            "message": "Package purchased successfully",
+            "wallet": wallet
+        }

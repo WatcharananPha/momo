@@ -33,3 +33,6 @@ class MaidProfileResponse(BaseModel):
     job_completed: int
     skills: Optional[List[dict]] = None
     profile_picture_url: Optional[str] = None
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    distance: Optional[float] = None

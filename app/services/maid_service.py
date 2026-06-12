@@ -153,29 +153,71 @@ class MaidService:
         logger.info(f"Maid {maid_id} updated: Tier {maid.tier}->{new_tier}, Rate {maid.baseRate}->{new_rate}")
 
     @staticmethod
-    async def find_available_maids(skill: str, exclude_ids: List[str] = None, limit: int = 5):
+    async def find_available_maids(
+        skill: str, 
+        exclude_ids: List[str] = None, 
+        limit: int = 5,
+        lat: Optional[float] = None,
+        lng: Optional[float] = None
+    ):
         if exclude_ids is None:
             exclude_ids = []
             
-        # Find maids who have the skill and are active, not in excluded list
-        maids = await db.maid.find_many(
-            where={
-                "status": MaidStatus.ACTIVE,
-                "id": {"not_in": exclude_ids},
-                "skills": {
-                    "some": {
-                        "skill": skill
+        if lat is not None and lng is not None:
+            # Load matching maids and sort by geodesic distance
+            maids = await db.maid.find_many(
+                where={
+                    "status": MaidStatus.ACTIVE,
+                    "id": {"not_in": exclude_ids},
+                    "skills": {
+                        "some": {
+                            "skill": skill
+                        }
                     }
-                }
-            },
-            include={"skills": True},
-            order=[
-                {"rating": "desc"},
-                {"jobCompleted": "desc"}
-            ],
-            take=limit
-        )
-        return maids
+                },
+                include={"skills": True}
+            )
+            
+            import math
+            def calculate_distance(m_lat: Optional[float], m_lng: Optional[float]) -> float:
+                if m_lat is None or m_lng is None:
+                    return 999999.0
+                # Haversine formula
+                R = 6371.0  # Earth's radius in kilometers
+                dlat = math.radians(m_lat - lat)
+                dlng = math.radians(m_lng - lng)
+                a = (math.sin(dlat / 2) ** 2 +
+                     math.cos(math.radians(lat)) * math.cos(math.radians(m_lat)) * math.sin(dlng / 2) ** 2)
+                c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+                return R * c
+                
+            for m in maids:
+                object.__setattr__(m, 'distance', calculate_distance(m.latitude, m.longitude))
+                
+            # Sort by distance (closest first), then by rating and job count
+            maids.sort(key=lambda x: (x.distance, -x.rating, -x.jobCompleted))
+            return maids[:limit]
+        else:
+            maids = await db.maid.find_many(
+                where={
+                    "status": MaidStatus.ACTIVE,
+                    "id": {"not_in": exclude_ids},
+                    "skills": {
+                        "some": {
+                            "skill": skill
+                        }
+                    }
+                },
+                include={"skills": True},
+                order=[
+                    {"rating": "desc"},
+                    {"jobCompleted": "desc"}
+                ],
+                take=limit
+            )
+            for m in maids:
+                object.__setattr__(m, 'distance', None)
+            return maids
 
     @staticmethod
     def _resolve_tier(job_completed: int, rating: float) -> MaidTier:

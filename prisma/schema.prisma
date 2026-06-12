@@ -212,6 +212,8 @@ model Maid {
   jobCompleted      Int        @default(0) @map("job_completed")
   baseRate          Decimal    @db.Decimal(10, 2) @map("base_rate")
   testScore         Int?       @map("test_score")
+  latitude          Float?     @map("latitude")
+  longitude         Float?     @map("longitude")
   demographics      Json?      @default("{}")
   createdAt         DateTime   @default(now()) @map("created_at")
   updatedAt         DateTime   @updatedAt @map("updated_at")

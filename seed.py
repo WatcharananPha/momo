@@ -57,6 +57,8 @@ async def seed_maids():
             "rating": 4.9,
             "jobCompleted": 520,
             "status": MaidStatus.ACTIVE,
+            "latitude": 13.7597,
+            "longitude": 100.5031,
             "skills": [BookingType.GENERAL_CLEANING, BookingType.COOKING, BookingType.IRONING]
         },
         {
@@ -67,6 +69,8 @@ async def seed_maids():
             "rating": 4.7,
             "jobCompleted": 150,
             "status": MaidStatus.ACTIVE,
+            "latitude": 13.7462,
+            "longitude": 100.5302,
             "skills": [BookingType.GENERAL_CLEANING, BookingType.IRONING]
         },
         {
@@ -77,6 +81,8 @@ async def seed_maids():
             "rating": 4.5,
             "jobCompleted": 45,
             "status": MaidStatus.ACTIVE,
+            "latitude": 13.7222,
+            "longitude": 100.5284,
             "skills": [BookingType.GENERAL_CLEANING]
         },
         {
@@ -87,6 +93,8 @@ async def seed_maids():
             "rating": 4.0,
             "jobCompleted": 5,
             "status": MaidStatus.ACTIVE,
+            "latitude": 13.8012,
+            "longitude": 100.5401,
             "skills": [BookingType.GENERAL_CLEANING]
         }
     ]
@@ -115,7 +123,18 @@ async def seed_maids():
                 })
             logger.info(f"Created maid: {m['fullName']} for user {user.id}")
         else:
-            logger.info(f"Maid {m['fullName']} already exists, skipping.")
+            skills = m.pop("skills") if "skills" in m else []
+            await db.maid.update(
+                where={"id": existing.id},
+                data={
+                    "latitude": m.get("latitude"),
+                    "longitude": m.get("longitude"),
+                    "tier": m.get("tier"),
+                    "rating": m.get("rating"),
+                    "status": m.get("status"),
+                }
+            )
+            logger.info(f"Maid {m['fullName']} coordinates updated.")
 
 async def seed_campaigns():
     logger.info("Seeding Campaigns...")

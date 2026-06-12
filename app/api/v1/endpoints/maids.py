@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, Path, HTTPException
+from fastapi import APIRouter, Depends, Path, Query, HTTPException
+from typing import List
 from app.services.maid_service import MaidService
 from app.schemas.maid import OnboardMaidDto, MaidProfileResponse
 from app.api.deps import get_current_user
@@ -41,6 +42,21 @@ async def get_pending_jobs(current_user: User = Depends(get_current_user)):
 async def accept_job(booking_id: str = Path(...), current_user: User = Depends(get_current_user)):
     """Accept a broadcasted job"""
     return await MaidService.accept_job(current_user.id, booking_id)
+
+@router.get("/nearby", response_model=List[MaidProfileResponse])
+async def get_nearby_maids(
+    lat: float = Query(...),
+    lng: float = Query(...),
+    skill: str = Query(...),
+    current_user: User = Depends(get_current_user)
+):
+    """Get active maids nearby sorted by proximity"""
+    return await MaidService.find_available_maids(
+        skill=skill,
+        lat=lat,
+        lng=lng,
+        limit=5
+    )
 
 @router.get("/{maid_id}", response_model=MaidProfileResponse)
 async def get_profile(maid_id: str = Path(...)):

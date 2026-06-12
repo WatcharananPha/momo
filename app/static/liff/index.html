@@ -41,6 +41,16 @@
         #booking-modal.open { opacity: 1; pointer-events: auto; }
         #booking-modal .modal-container { transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
         #booking-modal.open .modal-container { transform: translateY(0); }
+
+        /* Radar Match Style */
+        .radar-scan {
+            background: conic-gradient(from 0deg, transparent 50%, rgba(5, 150, 105, 0.25) 100%);
+            animation: radar-rotate 4s linear infinite;
+        }
+        @keyframes radar-rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body class="bg-bg antialiased text-ink">
@@ -91,7 +101,7 @@
             <button class="bg-white text-ink-muted border border-gray-100 px-6 py-3 rounded-2xl text-[14px] font-bold whitespace-nowrap shadow-premium btn-press" onclick="startBooking('REPAIR')" data-i18n="repair">Repair</button>
         </div>
 
-        <section class="px-6 mt-10">
+        <section class="px-6 mt-10 hidden">
             <div class="flex justify-between items-center mb-5">
                 <h3 class="text-[18px] font-black tracking-tight" data-i18n="exclusive_offers">Member Privileges</h3>
                 <span class="text-brand text-[13px] font-black uppercase tracking-wider" data-i18n="see_all">See All</span>
@@ -122,7 +132,7 @@
         </section>
 
         <!-- Wallet Card (Refined) - Deffered to Phase 2 -->
-        <section class="px-6 mt-10">
+        <section class="px-6 mt-10 hidden">
             <div class="bg-white rounded-[32px] p-6 shadow-premium border border-gray-100 flex flex-col min-h-[160px] relative overflow-hidden opacity-80 cursor-not-allowed" onclick="showToast('Digital Wallet Under Development </dev>', 'info')">
                 <div class="flex justify-between items-start mb-6">
                     <div>
@@ -175,7 +185,7 @@
     <!-- Navigation -->
     <nav class="fixed bottom-0 w-full max-w-[430px] left-1/2 -translate-x-1/2 bg-white/80 backdrop-blur-xl border-t border-gray-100 flex justify-around items-center px-6 py-5 z-[200] pb-[calc(1.2rem+env(safe-area-inset-bottom))] shadow-xl">
         <a href="/liff/index" class="text-brand transform scale-110"><svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"></path></svg></a>
-        <a href="#" class="text-ink-light opacity-40 cursor-not-allowed" onclick="showToast('Wallet coming in Phase 2 </dev>', 'info')"><svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg></a>
+        <a href="#" class="text-ink-light opacity-40 cursor-not-allowed hidden" onclick="showToast('Wallet coming in Phase 2 </dev>', 'info')"><svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg></a>
         <a href="/liff/tracking" class="text-ink-light hover:text-brand transition-colors"><svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg></a>
         <a href="/liff/profile" class="text-ink-light hover:text-brand transition-colors"><svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></a>
     </nav>
@@ -207,16 +217,47 @@
             </div>
 
             <div id="modal-match-view" class="hidden">
-                <div class="bg-brand-surface rounded-[32px] p-8 border border-brand/5 mb-8 flex flex-col items-center text-center shadow-inner">
-                    <div class="relative mb-4">
-                        <img id="matched-maid-pic" src="https://ui-avatars.com/api/?name=Maid&background=046c4e&color=fff" class="w-24 h-24 rounded-3xl object-cover border-4 border-white shadow-xl" alt="">
-                        <div class="absolute -bottom-1 -right-1 w-6 h-6 bg-brand border-4 border-white rounded-full"></div>
+                <!-- Proximity Radar / Map View -->
+                <div class="relative w-full h-[180px] bg-slate-950 rounded-[32px] overflow-hidden mb-5 shadow-lg border border-slate-900 flex items-center justify-center">
+                    <!-- Google Map Container -->
+                    <div id="booking-map" class="w-full h-full absolute inset-0 hidden"></div>
+                    <!-- Custom Premium Radar Fallback -->
+                    <div id="booking-radar" class="w-full h-full absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-slate-950 via-emerald-950/40 to-slate-950 text-white select-none">
+                        <div class="radar-scan absolute inset-0 pointer-events-none opacity-25"></div>
+                        <!-- Radar Grid Rings -->
+                        <div class="absolute w-36 h-36 border border-emerald-500/10 rounded-full animate-ping"></div>
+                        <div class="absolute w-24 h-24 border border-emerald-500/20 rounded-full"></div>
+                        <div class="absolute w-12 h-12 border border-emerald-500/35 rounded-full flex items-center justify-center">
+                            <!-- Center User Pin -->
+                            <div class="w-3.5 h-3.5 bg-blue-500 rounded-full border-2 border-white shadow-lg animate-pulse relative z-10"></div>
+                        </div>
+                        <!-- Nearby Maid Pins -->
+                        <div id="radar-maid-pins" class="absolute inset-0 pointer-events-none"></div>
                     </div>
-                    <h3 class="text-[22px] font-black text-ink tracking-tight" id="matched-maid-name">Match Found!</h3>
-                    <p class="text-[12px] text-brand font-black uppercase tracking-[0.2em] mt-2" id="matched-maid-tier">Certified Pro</p>
                 </div>
+
+                <!-- Location details badge -->
+                <div class="bg-gray-50/80 border border-gray-100/50 rounded-2xl p-4 mb-5 flex items-center justify-between text-[12px] font-bold shadow-sm">
+                    <div class="flex items-center gap-3 text-ink-muted">
+                        <svg class="w-4 h-4 text-brand shrink-0" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                        <div class="text-left">
+                            <div class="text-ink font-black" id="booking-loc-name">ตำแหน่งปัจจุบันของคุณ</div>
+                            <div class="text-[10px] text-ink-light tracking-tight font-medium" id="booking-loc-coords">Lat: 13.7563, Lng: 100.5018</div>
+                        </div>
+                    </div>
+                    <span class="bg-emerald-50 text-brand text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-lg border border-brand/10">GPS Active</span>
+                </div>
+
+                <!-- Nearby Maid Matching List -->
+                <div class="mb-6">
+                    <h4 class="text-[12px] font-black text-ink-light uppercase tracking-widest mb-3 text-left">แม่บ้านที่ใกล้ที่สุดในรัศมี (Closest Matches)</h4>
+                    <div id="nearby-maids-list" class="flex flex-col gap-3">
+                        <!-- Dynamic nearby maid cards will be rendered here -->
+                    </div>
+                </div>
+
                 <div class="flex flex-col gap-4">
-                    <button class="w-full bg-brand text-white text-[16px] font-black py-5 rounded-[24px] btn-press shadow-xl" id="final-confirm-btn">Book Now</button>
+                    <button class="w-full bg-brand text-white text-[16px] font-black py-5 rounded-[24px] btn-press shadow-xl shadow-brand/20" id="final-confirm-btn">Book Now</button>
                     <button class="w-full bg-gray-50 text-ink-muted text-[14px] font-black py-4 rounded-[24px] border border-gray-100 btn-press" id="reroll-btn">Try Another (<span id="reroll-count">3</span>)</button>
                 </div>
             </div>

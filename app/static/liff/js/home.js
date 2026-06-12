@@ -9,6 +9,8 @@ const SERVICE_INFO = {
 let currentService = null;
 let currentBooking = null;
 let rerollsLeft = 3;
+let lastUserLat = null;
+let lastUserLng = null;
 
 async function initHome() {
     await initCoreLiff(true);
@@ -70,6 +72,9 @@ document.getElementById('confirm-booking-btn').onclick = async () => {
         lng = pos.coords.longitude;
     } catch (e) { console.warn("Location skipped"); }
 
+    lastUserLat = lat;
+    lastUserLng = lng;
+
     try {
         if (!accessToken) throw new Error("Not authenticated");
         const res = await fetch(`${API_BASE}/bookings/confirm`, {
@@ -101,9 +106,167 @@ document.getElementById('confirm-booking-btn').onclick = async () => {
 function showMatch(maid) {
     document.getElementById('modal-initial-view').classList.add('hidden');
     document.getElementById('modal-match-view').classList.remove('hidden');
-    document.getElementById('matched-maid-name').textContent = maid.fullName || "Certified Pro";
-    document.getElementById('matched-maid-tier').textContent = `${maid.tier} Member`;
-    if (maid.profilePictureUrl) document.getElementById('matched-maid-pic').src = maid.profilePictureUrl;
+    loadNearbyMaids(lastUserLat, lastUserLng, maid);
+}
+
+async function loadNearbyMaids(lat, lng, matchedMaid) {
+    const listEl = document.getElementById('nearby-maids-list');
+    const pinsEl = document.getElementById('radar-maid-pins');
+    if (!listEl || !pinsEl) return;
+    listEl.innerHTML = '';
+    pinsEl.innerHTML = '';
+    
+    if (!lat || !lng) {
+        lat = 13.7563;
+        lng = 100.5018;
+    }
+    
+    document.getElementById('booking-loc-coords').textContent = `Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}`;
+
+    try {
+        const response = await fetch(`${API_BASE}/maids/nearby?lat=${lat}&lng=${lng}&skill=${currentService}`, {
+            headers: { 'Authorization': `Bearer ${accessToken}` }
+        });
+        
+        let maids = [];
+        if (response.ok) {
+            maids = await response.json();
+        } else {
+            console.warn("Failed to fetch nearby list, using matched maid");
+            maids = [matchedMaid];
+        }
+        
+        // Ensure matchedMaid is in list
+        if (!maids.some(m => m.id === matchedMaid.id)) {
+            maids.unshift(matchedMaid);
+        }
+
+        maids.forEach((m) => {
+            const isMatched = m.id === matchedMaid.id;
+            const distanceText = (m.distance !== null && m.distance !== undefined) ? `${m.distance.toFixed(2)} km` : "0.50 km";
+            
+            const card = document.createElement('div');
+            card.className = `flex items-center justify-between p-3.5 rounded-2xl border transition-all ${
+                isMatched 
+                ? 'bg-brand/5 border-brand/30 ring-1 ring-brand/10' 
+                : 'bg-white border-gray-100 hover:border-gray-200'
+            }`;
+            
+            card.innerHTML = `
+                <div class="flex items-center gap-3">
+                    <div class="relative shrink-0">
+                        <img src="${m.profilePictureUrl || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(m.fullName) + '&background=046c4e&color=fff'}" 
+                             class="w-10 h-10 rounded-xl object-cover border-2 border-white shadow-sm" alt="">
+                        ${isMatched ? '<div class="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-brand border-2 border-white rounded-full"></div>' : ''}
+                    </div>
+                    <div class="text-left">
+                        <div class="text-[13px] font-black text-ink flex items-center gap-1.5">
+                            ${m.fullName}
+                            ${isMatched ? '<span class="bg-brand text-white text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider">Matched</span>' : ''}
+                        </div>
+                        <div class="text-[10px] text-ink-light flex items-center gap-1.5 mt-0.5">
+                            <span>${m.tier}</span>
+                            <span>•</span>
+                            <span class="flex items-center text-amber-500 font-bold gap-0.5">
+                                <svg class="w-2.5 h-2.5 fill-current" viewBox="0 0 24 24"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
+                                ${m.rating.toFixed(1)}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <div class="text-[13px] font-black text-brand">${distanceText}</div>
+                    <div class="text-[9px] text-ink-light font-bold">จากตำแหน่งของคุณ</div>
+                </div>
+            `;
+            listEl.appendChild(card);
+
+            if (m.latitude && m.longitude) {
+                const dLat = m.latitude - lat;
+                const dLng = m.longitude - lng;
+                const scale = 80 / 0.05;
+                const xOffset = Math.max(-80, Math.min(80, dLng * scale));
+                const yOffset = Math.max(-80, Math.min(80, -dLat * scale));
+                
+                const pin = document.createElement('div');
+                pin.className = "absolute w-8 h-8 flex flex-col items-center justify-center transition-all duration-1000";
+                pin.style.left = `calc(50% + ${xOffset}px - 16px)`;
+                pin.style.top = `calc(50% + ${yOffset}px - 16px)`;
+                
+                pin.innerHTML = `
+                    <div class="relative group">
+                        <div class="w-3.5 h-3.5 ${isMatched ? 'bg-emerald-500 ring-4 ring-emerald-500/30' : 'bg-brand/80 ring-4 ring-brand/10'} rounded-full border border-white shadow-md animate-pulse"></div>
+                        <span class="absolute -top-6 left-1/2 -translate-x-1/2 bg-ink/90 text-white text-[8px] font-bold py-0.5 px-1.5 rounded whitespace-nowrap opacity-75">${m.fullName.split(' ')[0]} (${distanceText})</span>
+                    </div>
+                `;
+                pinsEl.appendChild(pin);
+            }
+        });
+
+        drawGoogleMap(lat, lng, maids, matchedMaid);
+
+    } catch (e) {
+        console.error("Error loading matching details", e);
+    }
+}
+
+function drawGoogleMap(userLat, userLng, maids, matchedMaid) {
+    const mapContainer = document.getElementById('booking-map');
+    const radarContainer = document.getElementById('booking-radar');
+    if (!mapContainer || !radarContainer) return;
+    
+    if (typeof google === 'undefined' || !google.maps) {
+        mapContainer.classList.add('hidden');
+        radarContainer.classList.remove('hidden');
+        return;
+    }
+    
+    mapContainer.classList.remove('hidden');
+    radarContainer.classList.add('hidden');
+    
+    const userPos = { lat: userLat, lng: userLng };
+    const mapObj = new google.maps.Map(mapContainer, {
+        zoom: 14,
+        center: userPos,
+        disableDefaultUI: true,
+        styles: [
+            { "featureType": "poi", "stylers": [{ "visibility": "off" }] },
+            { "featureType": "transit", "stylers": [{ "visibility": "off" }] }
+        ]
+    });
+    
+    new google.maps.Marker({
+        position: userPos,
+        map: mapObj,
+        title: "Your Location",
+        icon: {
+            path: google.maps.SymbolPath.CIRCLE,
+            scale: 8,
+            fillColor: "#3b82f6",
+            fillOpacity: 1,
+            strokeWeight: 3,
+            strokeColor: "#ffffff",
+        }
+    });
+    
+    maids.forEach(m => {
+        if (!m.latitude || !m.longitude) return;
+        const isMatched = m.id === matchedMaid.id;
+        
+        new google.maps.Marker({
+            position: { lat: m.latitude, lng: m.longitude },
+            map: mapObj,
+            title: m.fullName,
+            icon: {
+                path: 'M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z',
+                scale: 1.2,
+                fillColor: isMatched ? "#10b981" : "#046c4e",
+                fillOpacity: 1,
+                strokeWeight: 2,
+                strokeColor: "#ffffff",
+            }
+        });
+    });
 }
 
 document.getElementById('reroll-btn').onclick = async () => {

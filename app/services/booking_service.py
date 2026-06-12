@@ -10,38 +10,43 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 class BookingService:
     @staticmethod
     async def initiate_booking(user_id: str, data):
         # Step 1-4: Calculate Dynamic Credit Cost (Estimation)
         credit_cost = CreditService.calculate_credit_cost(
-            service_type=data.type,
-            party_size=data.party_size,
-            maid_tier="TRAINEE"
+            service_type=data.type, party_size=data.party_size, maid_tier="TRAINEE"
         )
         return {
             "credit_cost": credit_cost,
             "service_type": data.type,
-            "party_size": data.party_size
+            "party_size": data.party_size,
         }
 
     @staticmethod
     async def confirm_matching(user_id: str, data):
         # Step 5-10: Confirm and Start Matching
         ref_code = f"BK-{uuid.uuid4().hex[:8].upper()}"
-        
-        # Initial search for maid
-        available_maids = await MaidService.find_available_maids(skill=str(data.type))
+
+        # Initial search for maid sorted by closest radius
+        available_maids = await MaidService.find_available_maids(
+            skill=str(data.type),
+            lat=data.customer_lat,
+            lng=data.customer_lng
+        )
         if not available_maids:
-            raise HTTPException(status_code=404, detail="No available maids found for this service")
-        
+            raise HTTPException(
+                status_code=404, detail="No available maids found for this service"
+            )
+
         selected_maid = available_maids[0]
-        
+
         # Calculate final cost for this specific maid's tier
         credit_cost = CreditService.calculate_credit_cost(
             service_type=data.type,
             party_size=data.party_size,
-            maid_tier=selected_maid.tier
+            maid_tier=selected_maid.tier,
         )
 
         booking = await db.booking.create(
@@ -58,128 +63,139 @@ class BookingService:
                 "notes": data.notes,
                 "creditCost": credit_cost,
                 "referenceCode": ref_code,
-                "rerollCount": 0
+                "rerollCount": 0,
             },
-            include={"maid": True}
+            include={"maid": True},
         )
-        
+
+        if booking.maid and hasattr(selected_maid, 'distance'):
+            object.__setattr__(booking.maid, 'distance', selected_maid.distance)
+
         return booking
 
     @staticmethod
     async def reroll_maid(booking_id: str):
         # Step 11-14: Request Reroll
         booking = await db.booking.find_unique(
-            where={"id": booking_id},
-            include={"maid": True}
+            where={"id": booking_id}, include={"maid": True}
         )
-        
+
         if not booking:
             raise HTTPException(status_code=404, detail="Booking not found")
-        
+
         if booking.rerollCount >= 3:
             raise HTTPException(status_code=400, detail="Maximum reroll count reached")
-            
+
         if booking.status != BookingStatus.AUTO_MATCHING:
-            raise HTTPException(status_code=400, detail="Booking is not in matching state")
+            raise HTTPException(
+                status_code=400, detail="Booking is not in matching state"
+            )
 
         # Exclude current maid
         exclude_ids = [booking.maidId]
-        
+
         available_maids = await MaidService.find_available_maids(
             skill=str(booking.type),
-            exclude_ids=exclude_ids
+            exclude_ids=exclude_ids,
+            lat=booking.customerLat,
+            lng=booking.customerLng
         )
-        
+
         if not available_maids:
-            raise HTTPException(status_code=404, detail="No more maids available for reroll")
-            
+            raise HTTPException(
+                status_code=404, detail="No more maids available for reroll"
+            )
+
         new_maid = available_maids[0]
-        
+
         # Re-calculate cost for new maid tier
         new_credit_cost = CreditService.calculate_credit_cost(
             service_type=booking.type,
             party_size=booking.partySize,
-            maid_tier=new_maid.tier
+            maid_tier=new_maid.tier,
         )
-        
+
         updated_booking = await db.booking.update(
             where={"id": booking_id},
             data={
                 "maidId": new_maid.id,
                 "rerollCount": {"increment": 1},
-                "creditCost": new_credit_cost
+                "creditCost": new_credit_cost,
             },
-            include={"maid": True}
+            include={"maid": True},
         )
-        
+
+        if updated_booking.maid and hasattr(new_maid, 'distance'):
+            object.__setattr__(updated_booking.maid, 'distance', new_maid.distance)
+
         return updated_booking
 
     @staticmethod
     async def final_confirmation(booking_id: str):
         # Step 15-21: Final Confirmation
         booking = await db.booking.find_unique(
-            where={"id": booking_id},
-            include={"user": True, "maid": True}
+            where={"id": booking_id}, include={"user": True, "maid": True}
         )
         if not booking:
             raise HTTPException(status_code=404, detail="Booking not found")
-            
-        if booking.status != BookingStatus.AUTO_MATCHING:
-            raise HTTPException(status_code=400, detail="Booking is not in matching state")
 
-        # Step 16-19: Verify and Deduct Credits
-        await CreditService.deduct_credits(
-            user_id=booking.userId,
-            amount=booking.creditCost,
-            reference_id=booking.id,
-            description=f"Booking {booking.referenceCode}"
-        )
-        
+        if booking.status != BookingStatus.AUTO_MATCHING:
+            raise HTTPException(
+                status_code=400, detail="Booking is not in matching state"
+            )
+
+        # Step 16-19: Verify and Deduct Credits (Bypassed in this phase)
+        # await CreditService.deduct_credits(
+        #     user_id=booking.userId,
+        #     amount=booking.creditCost,
+        #     reference_id=booking.id,
+        #     description=f"Booking {booking.referenceCode}",
+        # )
+
         # Step 20: Update Booking Status CONFIRMED
         updated_booking = await db.booking.update(
             where={"id": booking_id},
             data={"status": BookingStatus.CONFIRMED},
-            include={"maid": True}
+            include={"maid": True},
         )
-        
+
         # Notify User
         if booking.user.lineUid:
             LineService.push_message(
                 booking.user.lineUid,
-                f"ยืนยันการจองสำเร็จ! {updated_booking.maid.fullName} จะไปดูแลคุณตามเวลาที่นัดหมายครับ"
+                f"ยืนยันการจองสำเร็จ! {updated_booking.maid.fullName} จะไปดูแลคุณตามเวลาที่นัดหมายครับ",
             )
-            
+
         return updated_booking
 
     @staticmethod
     async def update_status(booking_id: str, status: BookingStatus):
         booking = await db.booking.find_unique(
-            where={"id": booking_id},
-            include={"user": True, "maid": True}
+            where={"id": booking_id}, include={"user": True, "maid": True}
         )
         if not booking:
             raise HTTPException(status_code=404, detail="Booking not found")
-            
+
         data = {"status": status}
         if status == BookingStatus.COMPLETED:
             data["completedAt"] = datetime.utcnow()
-            
+
         updated_booking = await db.booking.update(
-            where={"id": booking_id},
-            data=data,
-            include={"user": True, "maid": True}
+            where={"id": booking_id}, data=data, include={"user": True, "maid": True}
         )
-        
+
         # Push Notifications
         if updated_booking.user.lineUid:
             status_msgs = {
                 BookingStatus.ARRIVED: f"แม่บ้าน {updated_booking.maid.fullName} เดินทางถึงสถานที่ของคุณแล้วครับ",
                 BookingStatus.IN_PROGRESS: f"แม่บ้าน {updated_booking.maid.fullName} เริ่มงานทำความสะอาดแล้วครับ",
-                BookingStatus.COMPLETED: f"งานของคุณเสร็จเรียบร้อยแล้วครับ! อย่าลืมประเมินผลงานเพื่อรับแต้มสะสมนะครับ"
+                BookingStatus.COMPLETED: f"งานของคุณเสร็จเรียบร้อยแล้วครับ! อย่าลืมประเมินผลงานเพื่อรับแต้มสะสมนะครับ",
             }
             if status in status_msgs:
-                LineService.push_message(updated_booking.user.lineUid, status_msgs[status])
-                
+                LineService.push_message(
+                    updated_booking.user.lineUid, status_msgs[status]
+                )
+
         return updated_booking
 
     @staticmethod
@@ -189,21 +205,21 @@ class BookingService:
             data={
                 "currentLat": lat,
                 "currentLng": lng,
-                "lastLocationAt": datetime.utcnow()
-            }
+                "lastLocationAt": datetime.utcnow(),
+            },
         )
 
     @staticmethod
     async def get_location(booking_id: str):
         logger = logging.getLogger(__name__)
         try:
-            booking = await db.booking.find_unique(
-                where={"id": booking_id}
-            )
+            booking = await db.booking.find_unique(where={"id": booking_id})
             if not booking:
                 raise HTTPException(status_code=404, detail="Booking not found")
             return booking
         except Exception as e:
             if not isinstance(e, HTTPException):
-                logger.exception("BookingService.get_location failed for %s", booking_id)
+                logger.exception(
+                    "BookingService.get_location failed for %s", booking_id
+                )
             raise

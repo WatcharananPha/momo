@@ -31,17 +31,20 @@ class GamificationService:
         if not reward:
             raise HTTPException(status_code=400, detail="Could not determine reward")
 
+        # Construct dynamic name since name column doesn't exist in schema
+        reward_name = f"{reward.value} points" if reward.rewardType == "POINT" else f"{reward.value} credits"
+
         # Award reward
-        if reward.type == "POINT":
+        if reward.rewardType == "POINT":
             # Minimal Point injection
             await db.pointtransaction.create(
                 data={
                     "userId": user_id,
-                    "type": "EARN",
+                    "type": "SPIN_WHEEL",
                     "amount": reward.value,
                     "source": "MINIGAME",
                     "referenceId": reward.id,
-                    "description": f"Won {reward.name} from Lucky Wheel"
+                    "description": f"Won {reward_name} from Lucky Wheel"
                 }
             )
             # Update balance
@@ -64,11 +67,11 @@ class GamificationService:
                         "lifetimePoints": reward.value
                     }
                 )
-        elif reward.type == "CREDIT":
+        elif reward.rewardType == "CREDIT":
             await CreditService.top_up(user_id, reward.value, reward.id)
 
-        logger.info(f"User {user_id} won {reward.name} from Lucky Wheel")
-        return {"reward_id": reward.id, "name": reward.name, "value": reward.value, "type": reward.type}
+        logger.info(f"User {user_id} won {reward_name} from Lucky Wheel")
+        return {"reward_id": reward.id, "name": reward_name, "value": reward.value, "type": reward.rewardType}
 
     @staticmethod
     async def get_active_campaigns():
