@@ -16,6 +16,18 @@ class OnboardMaidDto(BaseModel):
     test_score: int
     demographics: Optional[dict] = None
 
+class MaidSkillResponse(BaseModel):
+    model_config = ConfigDict(
+        from_attributes=True,
+        alias_generator=AliasGenerator(
+            validation_alias=to_camel,
+            serialization_alias=to_camel,
+        ),
+        populate_by_name=True
+    )
+    skill: str
+    level: int
+
 class MaidProfileResponse(BaseModel):
     model_config = ConfigDict(
         from_attributes=True,
@@ -31,7 +43,7 @@ class MaidProfileResponse(BaseModel):
     tier: str
     rating: float
     job_completed: int
-    skills: Optional[List[dict]] = None
+    skills: Optional[List[MaidSkillResponse]] = None
     profile_picture_url: Optional[str] = None
     latitude: Optional[float] = None
     longitude: Optional[float] = None

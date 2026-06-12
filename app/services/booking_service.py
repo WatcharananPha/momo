@@ -144,7 +144,7 @@ class BookingService:
                 status_code=400, detail="Booking is not in matching state"
             )
 
-        # Step 16-19: Verify and Deduct Credits (Bypassed in this phase)
+        # Step 16-19: Verify and Deduct Credits (Bypassed in Phase 1)
         # await CreditService.deduct_credits(
         #     user_id=booking.userId,
         #     amount=booking.creditCost,
