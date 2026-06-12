@@ -61,10 +61,21 @@ async def login_line(data: LineLoginDto):
 
 @router.post("/seed-database-temp")
 async def seed_database_temp():
-    """Temporary endpoint to seed the database on Railway"""
+    """Temporary endpoint to seed the database and give user test credits"""
     import os
+    from app.services.credit_service import CreditService
     result = os.system("python3 seed.py")
+    
+    # Try to top up some credits to all users for testing MVP
+    from app.core.database import db
+    try:
+        users = await db.user.find_many()
+        for u in users:
+            await CreditService.top_up(u.id, 1000)
+    except Exception as e:
+        print(f"Post-seed topup failed: {e}")
+
     if result == 0:
-        return {"status": "success", "message": "Database seeded"}
+        return {"status": "success", "message": "Database seeded and test credits added"}
     else:
         raise HTTPException(status_code=500, detail="Seeding failed")

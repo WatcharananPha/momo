@@ -58,3 +58,19 @@ class BookingMaidMatchResponse(BaseModel):
     maid: Optional[MaidProfileResponse] = None
     reroll_count: int
     can_reroll: bool
+
+class BookingLocationResponse(BaseModel):
+    model_config = ConfigDict(
+        from_attributes=True,
+        alias_generator=AliasGenerator(
+            validation_alias=to_camel,
+            serialization_alias=to_camel,
+        ),
+        populate_by_name=True
+    )
+    current_lat: Optional[float] = None
+    current_lng: Optional[float] = None
+    customer_lat: Optional[float] = None
+    customer_lng: Optional[float] = None
+    last_location_at: Optional[datetime] = None
+    status: BookingStatus

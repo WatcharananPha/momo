@@ -3,7 +3,8 @@ from app.services.booking_service import BookingService
 from app.schemas.booking import (
     BookingCreate, 
     BookingResponse, 
-    BookingEstimateResponse
+    BookingEstimateResponse,
+    BookingLocationResponse
 )
 from app.api import deps
 from prisma.models import User
@@ -64,7 +65,7 @@ async def update_location(
     """Maid App: Update current GPS location of the maid during journey"""
     return await BookingService.update_location(booking_id, lat, lng)
 
-@router.get("/{booking_id}/location")
+@router.get("/{booking_id}/location", response_model=BookingLocationResponse)
 async def get_location(
     booking_id: str,
     current_user: User = Depends(deps.get_current_user)
