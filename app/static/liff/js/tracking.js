@@ -11,6 +11,8 @@ let lastRouteTime = 0;
 let currentMaidPos = null;
 let customerPos = null; 
 let animationFrameId = null;
+let trackingFailures = 0;
+const MAX_TRACKING_FAILURES = 3;
 
 /**
  * Senior Dev Insights: Bootstrap sequence and Lifecycle management.
@@ -207,6 +209,7 @@ async function updateMaidLocation() {
             headers: { 'Authorization': `Bearer ${accessToken}` }
         });
         if (res.ok) {
+            trackingFailures = 0; // reset on success
             const data = await res.json();
             if (data.customerLat && data.customerLng) {
                 customerPos = { lat: data.customerLat, lng: data.customerLng };
@@ -224,9 +227,23 @@ async function updateMaidLocation() {
             }
             
             if (data.status === 'COMPLETED' || data.status === 'CANCELLED') stopLiveTracking();
+        } else {
+            // Non-OK response (4xx/5xx) — log and increment failure counter
+            console.warn('[Tracking] Update HTTP error', res.status);
+            trackingFailures++;
+            if (trackingFailures >= MAX_TRACKING_FAILURES) {
+                showToast('ระบบติดตามชั่วคราวไม่สามารถใช้งานได้ กรุณาลองใหม่ในภายหลัง', 'error');
+                stopLiveTracking();
+            }
+            return;
         }
     } catch (e) {
         console.error("[Tracking] Update failed:", e);
+        trackingFailures++;
+        if (trackingFailures >= MAX_TRACKING_FAILURES) {
+            showToast('ระบบติดตามชั่วคราวไม่สามารถใช้งานได้ กรุณาลองใหม่ในภายหลัง', 'error');
+            stopLiveTracking();
+        }
     }
 }
 
