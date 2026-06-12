@@ -113,22 +113,78 @@ async function fetchActiveBooking() {
             const bookings = await res.json();
             if (bookings.length > 0) {
                 const booking = bookings[0];
-                if (booking.customerLat && booking.customerLng) {
-                    customerPos = { lat: booking.customerLat, lng: booking.customerLng };
-                }
-                currentBookingId = booking.id;
-                updateTrackingUI(booking);
-
+                // Check if the most recent booking is actually trackable
                 const trackableStatuses = ['CONFIRMED', 'ARRIVED', 'IN_PROGRESS'];
+                
                 if (trackableStatuses.includes(booking.status)) {
+                    if (booking.customerLat && booking.customerLng) {
+                        customerPos = { lat: booking.customerLat, lng: booking.customerLng };
+                    }
+                    currentBookingId = booking.id;
+                    updateTrackingUI(booking);
                     startLiveTracking();
+                } else {
+                    handleNoActiveOrder();
                 }
+            } else {
+                handleNoActiveOrder();
             }
+        } else {
+            handleNoActiveOrder();
         }
     } catch (e) {
         console.error("[Data] Fetch booking error:", e);
+        handleNoActiveOrder();
     } finally {
         setTimeout(hideLoading, 600);
+    }
+}
+
+async function handleNoActiveOrder() {
+    console.info("[UX] No active order found. Falling back to User Location.");
+    
+    // Update UI to Idle State
+    document.getElementById('status-title').textContent = "Ready for Service";
+    document.getElementById('distance-display').innerHTML = '<span class="w-2 h-2 bg-slate-300 rounded-full inline-block"></span> No active tracking';
+    document.getElementById('eta-display-small').textContent = "-- min";
+    document.getElementById('maid-name').textContent = "Momo Professional";
+    document.getElementById('maid-tier').textContent = "• Standing by";
+    
+    // Request User Geolocation to center map
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const userPos = {
+                    lat: position.coords.latitude,
+                    lng: position.coords.longitude
+                };
+                console.log("[GPS] User located at:", userPos);
+                customerPos = userPos;
+                
+                if (map) {
+                    map.setCenter(userPos);
+                    map.setZoom(15);
+                    // Add a simple blue dot or marker for user
+                    new google.maps.Marker({
+                        position: userPos,
+                        map: map,
+                        icon: {
+                            path: google.maps.SymbolPath.CIRCLE,
+                            scale: 8,
+                            fillColor: "#3b82f6",
+                            fillOpacity: 1,
+                            strokeWeight: 3,
+                            strokeColor: "#ffffff",
+                        },
+                        title: "Your Location"
+                    });
+                }
+            },
+            (error) => {
+                console.warn("[GPS] Geolocation denied or failed:", error.message);
+            },
+            { enableHighAccuracy: true, timeout: 5000 }
+        );
     }
 }
 
