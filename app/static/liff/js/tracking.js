@@ -295,10 +295,16 @@ function updateTrackingUI(booking) {
     }
 }
 
-// Draggable Bottom Sheet with Multi-State Logic (Expanded, Mid, Collapsed)
+// Draggable Bottom Sheet with 3 Snapping States
+// Units are pixels visible from the bottom (negative translateY)
+const STATE = {
+    COLLAPSED: -50,   // Just handle & margin
+    DEFAULT: -340,    // Standard view
+    EXPANDED: -540    // Detailed view
+};
+
 let startY = 0;
-let currentY = 0;
-let baseTranslateY = 0;
+let basePos = STATE.DEFAULT; 
 let isDragging = false;
 
 function initDraggableSheet() {
@@ -308,10 +314,9 @@ function initDraggableSheet() {
 
     if (!sheet || !handle) return;
 
-    // Use current viewport height to calculate collapse depth
-    const viewportHeight = window.innerHeight;
-    const COLLAPSE_DEPTH = 320; // How far down to hide
-    const EXPAND_DEPTH = -120; // How far up to float
+    // Initial positioning
+    sheet.style.transform = `translateY(${basePos}px)`;
+    if (fab) fab.style.transform = `translateY(${basePos + 340}px)`;
 
     handle.addEventListener('touchstart', (e) => {
         startY = e.touches[0].clientY;
@@ -322,16 +327,16 @@ function initDraggableSheet() {
 
     document.addEventListener('touchmove', (e) => {
         if (!isDragging) return;
-        currentY = e.touches[0].clientY;
+        const currentY = e.touches[0].clientY;
         const deltaY = currentY - startY;
-        let move = baseTranslateY + deltaY;
+        let move = basePos + deltaY;
         
-        // Boundaries: don't go too high, don't go too low
-        move = Math.max(move, EXPAND_DEPTH - 50);
-        move = Math.min(move, COLLAPSE_DEPTH + 50);
+        // Rubber banding boundaries
+        if (move > STATE.COLLAPSED) move = STATE.COLLAPSED + (move - STATE.COLLAPSED) * 0.2;
+        if (move < STATE.EXPANDED) move = STATE.EXPANDED + (move - STATE.EXPANDED) * 0.2;
         
         sheet.style.transform = `translateY(${move}px)`;
-        if (fab) fab.style.transform = `translateY(${move}px)`;
+        if (fab) fab.style.transform = `translateY(${move + 340}px)`;
     }, { passive: true });
 
     document.addEventListener('touchend', (e) => {
@@ -342,23 +347,28 @@ function initDraggableSheet() {
         if (fab) fab.style.transition = 'transform 0.5s cubic-bezier(0.16, 1, 0.3, 1)';
         
         const finalY = e.changedTouches[0].clientY;
-        const totalDelta = finalY - startY;
-        let targetY = 0;
+        const deltaY = finalY - startY;
+        const finalPos = basePos + deltaY;
+
+        let target = STATE.DEFAULT;
 
         // Snapping Logic
-        const currentPos = baseTranslateY + totalDelta;
-
-        if (currentPos < -40) {
-            targetY = EXPAND_DEPTH;
-        } else if (currentPos > 80) {
-            targetY = COLLAPSE_DEPTH; // Full collapse to see map
+        if (finalPos > (STATE.COLLAPSED + STATE.DEFAULT) / 2) {
+            target = STATE.COLLAPSED;
+        } else if (finalPos < (STATE.DEFAULT + STATE.EXPANDED) / 2) {
+            target = STATE.EXPANDED;
         } else {
-            targetY = 0; // Default mid position
+            target = STATE.DEFAULT;
         }
 
-        sheet.style.transform = `translateY(${targetY}px)`;
-        if (fab) fab.style.transform = `translateY(${targetY}px)`;
-        baseTranslateY = targetY;
+        sheet.style.transform = `translateY(${target}px)`;
+        if (fab) fab.style.transform = `translateY(${target + 340}px)`;
+        basePos = target;
+        
+        // Update map padding dynamically if needed
+        if (map) {
+            map.setOptions({ padding: { bottom: Math.abs(target) > 50 ? 300 : 50 } });
+        }
     });
 }
 
