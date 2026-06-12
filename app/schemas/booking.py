@@ -4,6 +4,8 @@ from typing import Optional, List
 from datetime import datetime
 from prisma.enums import BookingType, BookingStatus
 
+from app.schemas.maid import MaidProfileResponse
+
 class BookingBase(BaseModel):
     type: BookingType
     scheduled_at: datetime
@@ -46,12 +48,13 @@ class BookingResponse(BaseModel):
     credit_cost: Optional[int] = None
     reroll_count: int
     reference_code: str
-    maid: Optional[dict] = None
+    maid: Optional[MaidProfileResponse] = None
     created_at: datetime
     updated_at: datetime
 
 class BookingMaidMatchResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
     booking_id: str
-    maid: Optional[dict] = None
+    maid: Optional[MaidProfileResponse] = None
     reroll_count: int
     can_reroll: bool
