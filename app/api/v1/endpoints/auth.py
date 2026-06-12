@@ -28,15 +28,7 @@ async def login_line(data: LineLoginDto):
     
     if response.status_code != 200:
         print(f"LINE Token Verification Failed. Status: {response.status_code}, Body: {response.text}")
-        # For prototype/testing purposes, if token is "mock_token", we bypass
-        if data.id_token == "mock_token":
-            line_data = {
-                "sub": "U_MOCK_USER_123",
-                "name": "Mock User",
-                "picture": "https://example.com/mock.jpg"
-            }
-        else:
-            raise HTTPException(status_code=401, detail=f"Invalid LINE ID Token: {response.text}")
+        raise HTTPException(status_code=401, detail=f"Invalid LINE ID Token: {response.text}")
     else:
         line_data = response.json()
     
@@ -59,23 +51,4 @@ async def login_line(data: LineLoginDto):
         "is_new_user": result["is_new_user"]
     }
 
-@router.post("/seed-database-temp")
-async def seed_database_temp():
-    """Temporary endpoint to seed the database and give user test credits"""
-    import os
-    from app.services.credit_service import CreditService
-    result = os.system("python3 seed.py")
-    
-    # Try to top up some credits to all users for testing MVP
-    from app.core.database import db
-    try:
-        users = await db.user.find_many()
-        for u in users:
-            await CreditService.top_up(u.id, 1000)
-    except Exception as e:
-        print(f"Post-seed topup failed: {e}")
-
-    if result == 0:
-        return {"status": "success", "message": "Database seeded and test credits added"}
-    else:
-        raise HTTPException(status_code=500, detail="Seeding failed")
+# Seed-database-temp route removed for production

@@ -18,10 +18,10 @@ class Settings(BaseSettings):
     LINE_LOGIN_CHANNEL_ID: str = os.getenv("LINE_LOGIN_CHANNEL_ID", "")
     LIFF_ID: str = os.getenv("LIFF_ID", "")
     
-    LINE_NOTIFY_MOCK_MODE: bool = os.getenv("LINE_NOTIFY_MOCK_MODE", "true").lower() == "true"
+    LINE_NOTIFY_MOCK_MODE: bool = os.getenv("LINE_NOTIFY_MOCK_MODE", "false").lower() == "true"
     
     # Payment
-    PAYMENT_MOCK_MODE: bool = os.getenv("PAYMENT_MOCK_MODE", "true").lower() == "true"
+    PAYMENT_MOCK_MODE: bool = os.getenv("PAYMENT_MOCK_MODE", "false").lower() == "true"
     OMISE_PUBLIC_KEY: str = os.getenv("OMISE_PUBLIC_KEY", "")
     OMISE_SECRET_KEY: str = os.getenv("OMISE_SECRET_KEY", "")
     GOOGLE_MAPS_API_KEY: str = os.getenv("MAP_API", "")

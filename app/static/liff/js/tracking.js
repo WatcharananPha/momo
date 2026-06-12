@@ -214,28 +214,72 @@ async function handleNoActiveOrder() {
     document.getElementById('maid-name').textContent = "Momo Professional";
     document.getElementById('maid-tier').textContent = "• Standing by";
     
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-                const userPos = {
-                    lat: position.coords.latitude,
-                    lng: position.coords.longitude
-                };
-                console.log("[GPS] User located at:", userPos);
-                customerPos = userPos;
-                
-                if (map) {
-                    map.setCenter(userPos);
-                    map.setZoom(15);
-                    updateCustomerMarker();
-                }
-            },
-            (error) => {
-                console.warn("[GPS] Geolocation denied or failed:", error.message);
-            },
-            { enableHighAccuracy: true, timeout: 5000 }
-        );
+    // Use permissive user-driven geolocation flow. Some in-app browsers require a user gesture
+    // to trigger the permission prompt — provide a visible button to request location explicitly.
+    try {
+        requestUserLocation();
+    } catch (e) {
+        console.warn('[GPS] requestUserLocation failed:', e);
     }
+}
+
+// Request user location with permission checks and UX feedback.
+async function requestUserLocation(forcePrompt = false) {
+    const reqBtn = document.getElementById('request-location-btn');
+    if (!navigator.geolocation) {
+        showToast('Geolocation not supported by this browser', 'error');
+        if (reqBtn) reqBtn.classList.remove('hidden');
+        return;
+    }
+
+    // Check permission state when available. If denied, show UX to instruct user.
+    try {
+        if (navigator.permissions && !forcePrompt) {
+            const perm = await navigator.permissions.query({ name: 'geolocation' });
+            console.info('[GPS] permission state:', perm.state);
+            if (perm.state === 'denied') {
+                showToast('กรุณาเปิดสิทธิ์ Location ในเบราว์เซอร์หรือแอป LINE แล้วกดปุ่มแชร์ตำแหน่ง', 'error');
+                if (reqBtn) reqBtn.classList.remove('hidden');
+                return;
+            }
+        }
+    } catch (e) {
+        console.warn('[GPS] permissions API check failed', e);
+    }
+
+    // Trigger actual geolocation request (user gesture friendly when called from button)
+    navigator.geolocation.getCurrentPosition(
+        (position) => {
+            const userPos = {
+                lat: position.coords.latitude,
+                lng: position.coords.longitude
+            };
+            console.log('[GPS] User located at:', userPos);
+            customerPos = userPos;
+
+            if (map) {
+                map.setCenter(userPos);
+                map.setZoom(15);
+                updateCustomerMarker();
+            }
+
+            if (reqBtn) reqBtn.classList.add('hidden');
+        },
+        (error) => {
+            console.warn('[GPS] Geolocation denied or failed:', error);
+            if (error && error.code === error.PERMISSION_DENIED) {
+                showToast('Location permission denied. กรุณาอนุญาต Location ในการตั้งค่า', 'error');
+                if (reqBtn) reqBtn.classList.remove('hidden');
+            } else if (error && error.code === error.POSITION_UNAVAILABLE) {
+                showToast('ตำแหน่งไม่พร้อมใช้งานในขณะนี้', 'error');
+            } else if (error && error.code === error.TIMEOUT) {
+                showToast('การค้นหาตำแหน่งหมดเวลา ลองอีกครั้ง', 'error');
+            } else {
+                showToast('ไม่สามารถเข้าถึงตำแหน่งได้', 'error');
+            }
+        },
+        { enableHighAccuracy: true, timeout: 8000 }
+    );
 }
 
 function startLiveTracking() {
@@ -501,4 +545,10 @@ async function submitReview() {
 document.addEventListener("DOMContentLoaded", () => {
     initTracking();
     initDraggableSheet();
+    const reqBtn = document.getElementById('request-location-btn');
+    if (reqBtn) {
+        reqBtn.addEventListener('click', () => {
+            requestUserLocation(true);
+        });
+    }
 });

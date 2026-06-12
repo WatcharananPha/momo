@@ -118,7 +118,11 @@
         <div id="bottom-sheet">
             
             <!-- FAB: Recenter (Moved inside bottom sheet for auto-tracking) -->
-            <div class="absolute right-6 z-20 pointer-events-auto" id="fab-container" style="top: -76px;">
+            <div class="absolute right-6 z-20 pointer-events-auto" id="fab-container" style="top: -76px; display:flex; gap:8px;">
+                <!-- Request user location (visible when permission needed) -->
+                <button id="request-location-btn" class="w-12 h-12 bg-white text-brand rounded-[22px] flex items-center justify-center shadow-sm btn-press hidden" title="Share Location">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 2v2m0 16v2M4 12H2m20 0h-2"></path><circle cx="12" cy="12" r="3.5"></circle></svg>
+                </button>
                 <button id="recenter-btn" class="w-14 h-14 bg-brand text-white rounded-[24px] flex items-center justify-center shadow-2xl btn-press">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="3.5" viewBox="0 0 24 24">
                         <path d="M12 2v2m0 16v2M4 12H2m20 0h-2"></path><circle cx="12" cy="12" r="3.5"></circle>
@@ -209,7 +213,7 @@
 
 <script src="/static/liff/js/app.js?v=1.0.6"></script>
 <script src="/static/liff/js/tracking.js?v=1.0.9"></script>
-<script src="https://maps.googleapis.com/maps/api/js?key=__MAP_API__&libraries=maps,marker,geometry&callback=initTrackingMap" async defer></script>
+<script src="https://maps.googleapis.com/maps/api/js?key=__MAP_API__&libraries=maps,marker,geometry&callback=initTrackingMap&loading=async" async defer></script>
 
 </body>
 </html>
