@@ -195,17 +195,22 @@ class BookingService:
 
     @staticmethod
     async def get_location(booking_id: str):
-        booking = await db.booking.find_unique(
-            where={"id": booking_id},
-            select={
-                "currentLat": True,
-                "currentLng": True,
-                "customerLat": True,
-                "customerLng": True,
-                "lastLocationAt": True,
-                "status": True
-            }
-        )
-        if not booking:
-            raise HTTPException(status_code=404, detail="Booking not found")
-        return booking
+        logger = logging.getLogger(__name__)
+        try:
+            booking = await db.booking.find_unique(
+                where={"id": booking_id},
+                select={
+                    "currentLat": True,
+                    "currentLng": True,
+                    "customerLat": True,
+                    "customerLng": True,
+                    "lastLocationAt": True,
+                    "status": True
+                }
+            )
+            if not booking:
+                raise HTTPException(status_code=404, detail="Booking not found")
+            return booking
+        except Exception as e:
+            logger.exception("BookingService.get_location failed for %s", booking_id)
+            raise

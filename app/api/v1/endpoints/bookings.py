@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Body
+import logging
 from app.services.booking_service import BookingService
 from app.schemas.booking import (
     BookingCreate, 
@@ -71,7 +72,16 @@ async def get_location(
     current_user: User = Depends(deps.get_current_user)
 ):
     """Customer App: Get current GPS location and ETA of the assigned maid"""
-    return await BookingService.get_location(booking_id)
+    logger = logging.getLogger(__name__)
+    try:
+        return await BookingService.get_location(booking_id)
+    except HTTPException:
+        # Let FastAPI handle known HTTPExceptions (404, 400, etc.)
+        raise
+    except Exception as e:
+        logger.exception("Error fetching booking location for %s", booking_id)
+        # Surface a controlled error to the client while logging the traceback
+        raise HTTPException(status_code=500, detail="Internal server error while fetching booking location")
 
 @router.get("/me", response_model=List[BookingResponse])
 async def get_my_bookings(
