@@ -267,7 +267,6 @@ function updateTrackingUI(booking) {
         if (label) {
             label.classList.toggle('text-brand', i <= currentStep);
             label.classList.toggle('text-ink-light', i > currentStep);
-            label.style.fontWeight = (i === currentStep) ? '900' : '700';
         }
     }
 
@@ -296,17 +295,23 @@ function updateTrackingUI(booking) {
     }
 }
 
-// Draggable Bottom Sheet with Touch Acceleration
+// Draggable Bottom Sheet with Multi-State Logic (Expanded, Mid, Collapsed)
 let startY = 0;
-let currentPos = 0;
+let currentY = 0;
+let baseTranslateY = 0;
 let isDragging = false;
 
 function initDraggableSheet() {
     const sheet = document.getElementById('bottom-sheet');
-    const handle = document.getElementById('drag-handle');
+    const handle = document.getElementById('drag-handle-container');
     const fab = document.getElementById('fab-container');
 
     if (!sheet || !handle) return;
+
+    // Use current viewport height to calculate collapse depth
+    const viewportHeight = window.innerHeight;
+    const COLLAPSE_DEPTH = 320; // How far down to hide
+    const EXPAND_DEPTH = -120; // How far up to float
 
     handle.addEventListener('touchstart', (e) => {
         startY = e.touches[0].clientY;
@@ -317,36 +322,43 @@ function initDraggableSheet() {
 
     document.addEventListener('touchmove', (e) => {
         if (!isDragging) return;
-        const y = e.touches[0].clientY;
-        const deltaY = y - startY;
+        currentY = e.touches[0].clientY;
+        const deltaY = currentY - startY;
+        let move = baseTranslateY + deltaY;
         
-        if (deltaY < 0) { // Drag up
-            const move = Math.max(deltaY, -140);
-            sheet.style.transform = `translateY(${move}px)`;
-            if (fab) fab.style.transform = `translateY(${move}px)`;
-        } else if (deltaY > 0) { // Drag down
-            const move = Math.min(deltaY, 0);
-            sheet.style.transform = `translateY(${move}px)`;
-            if (fab) fab.style.transform = `translateY(${move}px)`;
-        }
+        // Boundaries: don't go too high, don't go too low
+        move = Math.max(move, EXPAND_DEPTH - 50);
+        move = Math.min(move, COLLAPSE_DEPTH + 50);
+        
+        sheet.style.transform = `translateY(${move}px)`;
+        if (fab) fab.style.transform = `translateY(${move}px)`;
     }, { passive: true });
 
     document.addEventListener('touchend', (e) => {
         if (!isDragging) return;
         isDragging = false;
+        
         sheet.style.transition = 'transform 0.5s cubic-bezier(0.16, 1, 0.3, 1)';
         if (fab) fab.style.transition = 'transform 0.5s cubic-bezier(0.16, 1, 0.3, 1)';
         
-        const y = e.changedTouches[0].clientY;
-        const deltaY = y - startY;
+        const finalY = e.changedTouches[0].clientY;
+        const totalDelta = finalY - startY;
+        let targetY = 0;
 
-        if (deltaY < -40) {
-            sheet.style.transform = 'translateY(-120px)';
-            if (fab) fab.style.transform = 'translateY(-120px)';
+        // Snapping Logic
+        const currentPos = baseTranslateY + totalDelta;
+
+        if (currentPos < -40) {
+            targetY = EXPAND_DEPTH;
+        } else if (currentPos > 80) {
+            targetY = COLLAPSE_DEPTH; // Full collapse to see map
         } else {
-            sheet.style.transform = 'translateY(0)';
-            if (fab) fab.style.transform = 'translateY(0)';
+            targetY = 0; // Default mid position
         }
+
+        sheet.style.transform = `translateY(${targetY}px)`;
+        if (fab) fab.style.transform = `translateY(${targetY}px)`;
+        baseTranslateY = targetY;
     });
 }
 
