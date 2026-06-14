@@ -41,15 +41,9 @@ class MaidService:
                 "skills": {
                     "create": skills_data
                 },
-                "onboarding": {
-                    "create": {
-                        "testScore": test_score,
-                        "passed": passed,
-                        "status": onboarding_status
-                    }
-                }
+                "testScore": test_score
             },
-            include={"skills": True, "onboarding": True}
+            include={"skills": True}
         )
 
         logger.info(f"Maid onboarded: {maid.id} - {maid.fullName}")
