@@ -276,13 +276,50 @@ function renderJobs(jobs) {
                     <span class="bg-slate-100 text-slate-500 text-[10px] px-2 py-0.5 rounded font-bold uppercase">${job.membership_tier}</span>
                     ${tagsHtml}
                 </div>
-                <button class="w-full bg-partner text-white font-bold text-[14px] py-3.5 rounded-xl btn-press shadow-lg shadow-partner/20" onclick="acceptJob(this, '${job.id}', '${job.type}', '${job.location_name}', '${job.customer_name}', '${job.notes}', '${job.customer_tags.join(',')}')">
-                    Accept Job
-                </button>
+                <div class="flex gap-3">
+                    <button class="flex-1 bg-red-500 text-white font-bold text-[14px] py-3.5 rounded-xl btn-press shadow-lg shadow-red-200" onclick="cancelJob(this, '${job.id}')">
+                        Cancel
+                    </button>
+                    <button class="flex-1 bg-partner text-white font-bold text-[14px] py-3.5 rounded-xl btn-press shadow-lg shadow-partner/20" onclick="acceptJob(this, '${job.id}', '${job.type}', '${job.location_name}', '${job.customer_name}', '${job.notes}', '${job.customer_tags.join(',')}')">
+                        Accept Job
+                    </button>
+                </div>
             </div>
         `;
         container.innerHTML += html;
     });
+}
+
+async function cancelJob(btn, jobId) {
+    btn.innerHTML = '<div class="spinner-small mx-auto border-white border-t-transparent"></div>';
+    btn.disabled = true;
+    
+    try {
+        const res = await fetch(`${API_BASE}/bookings/${jobId}/status`, {
+            method: 'PATCH',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${accessToken}` 
+            },
+            body: JSON.stringify({ status: "CANCELLED" })
+        });
+        
+        if (res.ok) {
+            showToast("Job request cancelled.", "success");
+            const card = document.getElementById(`job-card-${jobId}`);
+            if (card) {
+                card.style.opacity = '0';
+                card.style.transition = 'opacity 0.4s ease';
+                setTimeout(() => card.remove(), 400);
+            }
+        } else {
+            throw new Error("Failed to cancel job");
+        }
+    } catch (e) {
+        showToast("Failed to cancel: " + e.message, "error");
+        btn.disabled = false;
+        btn.innerHTML = 'Cancel';
+    }
 }
 
 async function acceptJob(btn, jobId, type, location, customerName, notes, tagsStr) {
