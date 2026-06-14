@@ -1,3 +1,8 @@
+// Force client-side redirection to /liff/maid to comply with LINE Developers Console redirectUri prefix rules
+if (window.location.pathname === "/maid" || window.location.pathname.startsWith("/maid/")) {
+    window.location.replace(window.location.origin + window.location.pathname.replace("/maid", "/liff/maid") + window.location.search);
+}
+
 const LIFF_ID = "2010298695-2Jy19bfM"; // Using the same LIFF ID for prototype testing
 const API_BASE = window.location.origin + "/api/v1";
 let isPartnerActive = false; 
