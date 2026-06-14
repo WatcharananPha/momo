@@ -187,6 +187,7 @@ async def main():
     await db.connect()
     try:
         await seed_packages()
+        await seed_maids()
         await seed_campaigns()
         await seed_point_rules()
         logger.info("Seeding complete! 🌱")

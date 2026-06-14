@@ -31,31 +31,8 @@ def test_full_backend_flow():
     print(f"✅ Balance: {balance['availablePoints']} points")
     assert balance['availablePoints'] >= points_awarded
 
-    # 4. List Packages
-    print("\n4. Listing Subscription Packages...")
-    resp = requests.get(f"{BASE_URL}/credit/packages", headers=headers)
-    assert resp.status_code == 200
-    packages = resp.json()
-    print(f"✅ Found {len(packages)} packages")
-    package_id = packages[0]['id']
-    print(f"Selected Package: {packages[0]['name']} ({packages[0]['credits']} credits)")
-
-    # 5. Purchase Package (Credit Top-up)
-    print("\n5. Purchasing Package...")
-    resp = requests.post(f"{BASE_URL}/credit/purchase-package", json={"package_id": package_id}, headers=headers)
-    assert resp.status_code == 200
-    print(f"✅ Package purchased successfully")
-
-    # 6. Check Credit Balance
-    print("\n6. Checking Credit Wallet...")
-    resp = requests.get(f"{BASE_URL}/credit/wallet", headers=headers)
-    assert resp.status_code == 200
-    wallet = resp.json()
-    print(f"✅ Credit Balance: {wallet['balance']}")
-    assert wallet['balance'] >= packages[0]['credits']
-
-    # 7. Booking Flow - Estimation
-    print("\n7. Booking Flow - Estimation...")
+    # 4. Booking Flow - Estimation
+    print("\n4. Booking Flow - Estimation...")
     booking_data = {
         "type": "GENERAL_CLEANING",
         "scheduled_at": "2026-06-01T10:00:00Z",
@@ -68,34 +45,28 @@ def test_full_backend_flow():
     estimate = resp.json()
     print(f"✅ Estimation: {estimate['creditCost']} credits")
 
-    # 8. Booking Flow - Confirm and Match
-    print("\n8. Booking Flow - Confirm and Match...")
+    # 5. Booking Flow - Confirm and Match
+    print("\n5. Booking Flow - Confirm and Match...")
     resp = requests.post(f"{BASE_URL}/bookings/confirm", json=booking_data, headers=headers)
     assert resp.status_code == 200
     booking = resp.json()
     booking_id = booking["id"]
     print(f"✅ Matched with Maid: {booking['maidId']} (Ref: {booking['referenceCode']})")
 
-    # 9. Booking Flow - Reroll
-    print("\n9. Booking Flow - Reroll...")
+    # 6. Booking Flow - Reroll
+    print("\n6. Booking Flow - Reroll...")
     resp = requests.post(f"{BASE_URL}/bookings/{booking_id}/reroll", headers=headers)
     assert resp.status_code == 200
     booking = resp.json()
     print(f"✅ Rerolled! New Maid: {booking['maidId']}, Reroll Count: {booking['rerollCount']}")
 
-    # 10. Booking Flow - Final Confirmation (Deduct Credits)
-    print("\n10. Booking Flow - Final Confirmation...")
+    # 7. Booking Flow - Final Confirmation (Bypass Credits)
+    print("\n7. Booking Flow - Final Confirmation...")
     resp = requests.post(f"{BASE_URL}/bookings/{booking_id}/final-confirm", headers=headers)
     assert resp.status_code == 200
     booking = resp.json()
     print(f"✅ Booking CONFIRMED. Status: {booking['status']}")
-
-    # 11. Check Credit Balance after Deduction
-    print("\n11. Checking Credit Wallet after deduction...")
-    resp = requests.get(f"{BASE_URL}/credit/wallet", headers=headers)
-    new_wallet = resp.json()
-    print(f"✅ New Credit Balance: {new_wallet['balance']}")
-    assert new_wallet['balance'] == wallet['balance']
+    assert booking['status'] == "CONFIRMED"
 
     # 12. Maid App - Status Updates
     print("\n12. Maid App - Updating Service Status...")

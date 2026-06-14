@@ -144,13 +144,13 @@ class BookingService:
                 status_code=400, detail="Booking is not in matching state"
             )
 
-        # Step 16-19: Verify and Deduct Credits
-        await CreditService.deduct_credits(
-            user_id=booking.userId,
-            amount=booking.creditCost,
-            reference_id=booking.id,
-            description=f"Booking {booking.referenceCode}"
-        )
+        # Step 16-19: Verify and Deduct Credits (Bypassed for direct booking in Phase 1)
+        # await CreditService.deduct_credits(
+        #     user_id=booking.userId,
+        #     amount=booking.creditCost,
+        #     reference_id=booking.id,
+        #     description=f"Booking {booking.referenceCode}"
+        # )
 
         # Step 20: Update Booking Status CONFIRMED
         updated_booking = await db.booking.update(

@@ -310,11 +310,24 @@ document.getElementById('final-confirm-btn').onclick = async () => {
     if (!currentBooking) return;
     const btn = document.getElementById('final-confirm-btn');
     btn.disabled = true;
-    // We skip the actual credit‑based final confirm for MVP.
-    // The booking is already accepted; just notify success and redirect to tracking.
-    showToast("Booking confirmed! Proceed to tracking.", "success");
-    closeModal();
-    setTimeout(() => { location.href = '/liff/tracking'; }, 800);
+    try {
+        const res = await fetch(`${API_BASE}/bookings/${currentBooking.id}/final-confirm`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${accessToken}` }
+        });
+        if (res.ok) {
+            showToast("Booking confirmed! Proceed to tracking.", "success");
+            closeModal();
+            setTimeout(() => { location.href = '/liff/tracking'; }, 800);
+        } else {
+            const err = await res.json();
+            throw new Error(err.detail || "Confirmation failed");
+        }
+    } catch (e) {
+        showToast(e.message, "error");
+    } finally {
+        btn.disabled = false;
+    }
 };
 
 window.openWheel = function() {
