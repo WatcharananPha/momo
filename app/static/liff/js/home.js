@@ -16,24 +16,20 @@ let momo_referral_code = 'MOMO888';   // will be populated from point balance
 
 async function initHome() {
     await initCoreLiff(true);
-    await updateDashboardData();
-    // Pre‑fetch active campaigns for lucky wheel
+    hideCreditUI();
     fetchActiveCampaigns();
-    // Add membership join & refer buttons dynamically
-    insertActionButtons();
 }
 
-async function updateDashboardData() {
-    const data = await fetchWalletAndPoints();
-    if (data) {
-        const wallet = data.wallet || { balance: 0 };
-        const balance = data.balance || { availablePoints: 0, referral_code: 'MOMO888' };
-        document.getElementById('wallet-balance').textContent = (wallet.balance || 0).toLocaleString();
-        document.getElementById('point-balance').textContent = (balance.availablePoints || 0).toLocaleString();
-        momo_referral_code = balance.referral_code || 'MOMO888';
-    } else {
-        document.getElementById('wallet-balance').textContent = "0";
-        document.getElementById('point-balance').textContent = "0";
+function hideCreditUI() {
+    // Hide wallet balance card
+    const walletBalanceEl = document.getElementById('wallet-balance');
+    if (walletBalanceEl && walletBalanceEl.parentElement && walletBalanceEl.parentElement.parentElement) {
+        walletBalanceEl.parentElement.parentElement.style.display = 'none';
+    }
+    // Hide points card
+    const pointBalanceEl = document.getElementById('point-balance');
+    if (pointBalanceEl && pointBalanceEl.parentElement && pointBalanceEl.parentElement.parentElement) {
+        pointBalanceEl.parentElement.parentElement.style.display = 'none';
     }
 }
 
@@ -49,216 +45,6 @@ async function fetchActiveCampaigns() {
     } catch (e) {
         console.error("Fetch campaigns failed", e);
     }
-}
-
-function insertActionButtons() {
-    const pointBalanceEl = document.getElementById('point-balance');
-    if (!pointBalanceEl) return;
-    const parent = pointBalanceEl.parentElement?.parentElement;
-    if (!parent) return;
-
-    // Join Membership button
-    const joinDiv = document.createElement('div');
-    joinDiv.className = 'mt-2';
-    joinDiv.innerHTML = `<button id="join-membership-btn" onclick="joinMembership()" class="w-full bg-gradient-to-r from-brand to-emerald-500 text-white font-bold py-3 px-4 rounded-xl shadow-md">Join Membership & Earn 50 Points</button>`;
-    parent.insertAdjacentElement('afterend', joinDiv);
-
-    // Referral button
-    const referDiv = document.createElement('div');
-    referDiv.className = 'mt-2';
-    referDiv.innerHTML = `<button id="refer-btn" onclick="showReferralModal()" class="w-full bg-brand/10 text-brand font-bold py-3 px-4 rounded-xl">Refer a Friend</button>`;
-    parent.insertAdjacentElement('afterend', referDiv);
-
-    // Packages button
-    const pkgDiv = document.createElement('div');
-    pkgDiv.className = 'mt-2';
-    pkgDiv.innerHTML = `<button id="packages-btn" onclick="showPackagesModal()" class="w-full bg-brand/10 text-brand font-bold py-3 px-4 rounded-xl">Buy Packages</button>`;
-    parent.insertAdjacentElement('afterend', pkgDiv);
-}
-
-async function joinMembership() {
-    const btn = document.getElementById('join-membership-btn');
-    if (!btn) return;
-    btn.disabled = true;
-    try {
-        const res = await fetch(`${API_BASE}/points/join`, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${accessToken}` }
-        });
-        if (res.ok) {
-            const points = await res.json();
-            showToast(`You've earned ${points} onboarding points!`, 'success');
-            await updateDashboardData();
-        } else {
-            const err = await res.json();
-            showToast(err.detail || 'Join failed', 'error');
-        }
-    } catch (e) {
-        showToast(e.message, 'error');
-    } finally {
-        btn.disabled = false;
-    }
-}
-
-function showReferralModal() {
-    const code = momo_referral_code || 'MOMO888';
-    const link = `${window.location.origin}/liff?ref=${code}`;
-    const modalHtml = `
-      <div class="fixed inset-0 bg-black/60 flex items-center justify-center z-50" id="referral-modal-overlay" onclick="closeReferralModal()">
-        <div class="bg-white rounded-3xl p-6 w-11/12 max-w-sm shadow-xl" onclick="event.stopPropagation()">
-          <h3 class="text-lg font-black mb-2">Your Referral Link</h3>
-          <p class="text-xs text-gray-500 mb-4">Share this link to earn 50 points per friend!</p>
-          <div class="flex items-center bg-gray-100 rounded-xl p-3">
-            <input id="referral-link-input" class="flex-1 bg-transparent text-xs outline-none text-gray-700" value="${link}" readonly />
-            <button onclick="copyReferralLink()" class="ml-2 bg-brand text-white text-xs px-4 py-1 rounded-full font-bold">Copy</button>
-          </div>
-          <button onclick="closeReferralModal()" class="mt-4 w-full bg-gray-100 text-gray-600 py-2 rounded-xl font-bold text-sm">Close</button>
-        </div>
-      </div>
-    `;
-    document.body.insertAdjacentHTML('beforeend', modalHtml);
-}
-
-function closeReferralModal() {
-    const overlay = document.getElementById('referral-modal-overlay');
-    if (overlay) overlay.remove();
-}
-
-function copyReferralLink() {
-    const input = document.getElementById('referral-link-input');
-    if (input) {
-        input.select();
-        document.execCommand('copy');
-        showToast('ลิงค์ถูกคัดลอกแล้ว!', 'success');
-    }
-}
-
-async function showPackagesModal() {
-    try {
-        const res = await fetch(`${API_BASE}/credit/packages`, {
-            headers: { 'Authorization': `Bearer ${accessToken}` }
-        });
-        if (!res.ok) throw new Error('Failed to fetch packages');
-        const packages = await res.json();
-        let itemsHtml = '';
-        packages.forEach(pkg => {
-            itemsHtml += `
-              <div class="flex justify-between items-center py-2 border-b">
-                <div>
-                  <p class="font-bold text-sm">${pkg.name}</p>
-                  <p class="text-xs text-gray-500">${pkg.credits} Credits</p>
-                </div>
-                <button onclick="purchasePackage('${pkg.id}')" class="bg-brand text-white px-3 py-1 rounded-xl text-xs font-bold">Buy ${pkg.price} ฿</button>
-              </div>
-            `;
-        });
-        const modalHtml = `
-          <div class="fixed inset-0 bg-black/60 flex items-center justify-center z-50" id="packages-modal-overlay" onclick="closePackagesModal()">
-            <div class="bg-white rounded-3xl p-6 w-11/12 max-w-sm shadow-xl" onclick="event.stopPropagation()">
-              <h3 class="text-lg font-black mb-4">Credit Packages</h3>
-              <div>${itemsHtml}</div>
-              <button onclick="closePackagesModal()" class="mt-4 w-full bg-gray-100 text-gray-600 py-2 rounded-xl font-bold text-sm">Close</button>
-            </div>
-          </div>
-        `;
-        document.body.insertAdjacentHTML('beforeend', modalHtml);
-    } catch(e) { showToast(e.message, 'error'); }
-}
-
-function closePackagesModal() {
-    const overlay = document.getElementById('packages-modal-overlay');
-    if (overlay) overlay.remove();
-}
-
-function purchasePackage(packageId) {
-    const dummyToken = 'tok_mock';
-    const url = `${API_BASE}/credit/purchase-package`;
-    fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
-        body: JSON.stringify({ package_id: packageId, omise_token: dummyToken })
-    })
-    .then(res => res.json())
-    .then(data => {
-        showToast('Package purchased! Credits added.', 'success');
-        closePackagesModal();
-        updateDashboardData();
-    })
-    .catch(e => showToast(e.message, 'error'));
-}
-
-window.openWheel = function() {
-    const el = document.getElementById('wheel-modal');
-    if (!el) return;
-    // Ensure we have an active campaign; if not, fetch again.
-    if (!activeCampaignId) {
-        fetchActiveCampaigns().then(() => {
-            if (!activeCampaignId) {
-                showToast('No active campaign right now', 'error');
-                return;
-            }
-            el.classList.remove('hidden');
-            el.classList.add('flex');
-        });
-    } else {
-        el.classList.remove('hidden');
-        el.classList.add('flex');
-    }
-};
-
-window.closeWheel = function() {
-    const el = document.getElementById('wheel-modal');
-    if (el) {
-        el.classList.add('hidden');
-        el.classList.remove('flex');
-    }
-};
-
-window.spinWheel = async function() {
-    const btn = document.getElementById('spin-btn');
-    const wheel = document.getElementById('wheel-canvas');
-    if (!btn || !wheel || !activeCampaignId) return;
-    btn.disabled = true;
-    // Start spinning animation
-    const deg = Math.floor(Math.random() * 360) + 1800;
-    wheel.style.transition = 'transform 3s ease-out';
-    wheel.style.transform = `rotate(${deg}deg)`;
-
-    try {
-        const res = await fetch(`${API_BASE}/gamification/lucky-wheel/${activeCampaignId}/spin`, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${accessToken}` }
-        });
-        let reward;
-        if (res.ok) {
-            reward = await res.json();
-        } else {
-            const err = await res.json();
-            showToast(err.detail || 'Spin failed', 'error');
-            btn.disabled = false;
-            wheel.style.transform = 'rotate(0deg)';
-            return;
-        }
-        setTimeout(() => {
-            showToast(`You won ${reward.name}!`, 'success');
-            wheel.style.transform = 'rotate(0deg)';
-            btn.disabled = false;
-            closeWheel();
-            updateDashboardData();
-        }, 3500);
-    } catch (e) {
-        showToast(e.message, 'error');
-        btn.disabled = false;
-        wheel.style.transform = 'rotate(0deg)';
-    }
-};
-
-window.openPackages = function() {
-    showPackagesModal();
-};
-
-function closePackages() {
-    closePackagesModal();
 }
 
 function startBooking(type) {
@@ -524,32 +310,11 @@ document.getElementById('final-confirm-btn').onclick = async () => {
     if (!currentBooking) return;
     const btn = document.getElementById('final-confirm-btn');
     btn.disabled = true;
-    try {
-        const res = await fetch(`${API_BASE}/bookings/${currentBooking.id}/final-confirm`, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${accessToken}` }
-        });
-        if (res.ok) {
-            closeModal();
-            showToast("Success! Tracking started.", "success");
-            setTimeout(() => { location.href = '/liff/tracking'; }, 1500);
-        } else {
-            // Parse error body for helpful UX
-            let err = null;
-            try { err = await res.json(); } catch (e) { err = { detail: 'Unknown error' }; }
-            const detail = err && err.detail ? err.detail : 'Error confirming booking';
-            console.warn('Final-confirm failed', res.status, detail);
-
-            // Specific handling for insufficient credit
-            if (res.status === 400 && String(detail).toLowerCase().includes('insufficient')) {
-                showToast('ยอดเครดิตไม่เพียงพอ กรุณาเติมเงินก่อนยืนยันการจอง', 'error');
-                // Redirect user to wallet/top-up after brief pause
-                setTimeout(() => { location.href = '/liff/wallet'; }, 1000);
-            } else {
-                showToast(detail, 'error');
-            }
-        }
-    } finally { btn.disabled = false; }
+    // We skip the actual credit‑based final confirm for MVP.
+    // The booking is already accepted; just notify success and redirect to tracking.
+    showToast("Booking confirmed! Proceed to tracking.", "success");
+    closeModal();
+    setTimeout(() => { location.href = '/liff/tracking'; }, 800);
 };
 
 window.openWheel = function() {
@@ -574,6 +339,7 @@ window.spinWheel = function() {
     if (!btn || !wheel) return;
     btn.disabled = true;
     const deg = Math.floor(Math.random() * 360) + 1800; 
+    wheel.style.transition = 'transform 3s ease-out';
     wheel.style.transform = `rotate(${deg}deg)`;
     setTimeout(() => {
         showToast("Bonus Points Added! ✨", "success");
@@ -583,7 +349,7 @@ window.spinWheel = function() {
 };
 
 window.openPackages = function() {
-    showToast("Payment System Under Development </dev>", "info");
+    showToast("Payment System Under Development", "info");
 };
 
 function closePackages() {
