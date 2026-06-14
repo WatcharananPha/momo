@@ -61,10 +61,10 @@ const translations = {
         "packages_title": "เลือกแพ็กเกจสมาชิก"
     },
     en: {
-        "greeting_hello": "Hello,",
-        "greeting_morning": "Good morning,",
-        "greeting_afternoon": "Good afternoon,",
-        "greeting_evening": "Good evening,",
+        "greeting_hello": "Hey,",
+        "greeting_morning": "Morning,",
+        "greeting_afternoon": "Afternoon,",
+        "greeting_evening": "Evening,",
         "guest_user": "Guest User!",
         "search_placeholder": "Search service...",
         "cleaning": "Cleaning",
