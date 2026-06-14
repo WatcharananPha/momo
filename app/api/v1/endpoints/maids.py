@@ -12,8 +12,8 @@ async def onboard(dto: OnboardMaidDto, current_user: User = Depends(get_current_
     """Register and onboard a new maid linked to current user"""
     # Force the maid to be linked to the logged-in user
     dto_dict = dto.dict()
-    dto_dict['user_id'] = current_user.id
-    return await MaidService.onboard_maid(dto_dict)
+    # Pass user_id explicitly to service
+    return await MaidService.onboard_maid(user_id=current_user.id, data=dto_dict)
 
 @router.get("/me")
 async def get_my_profile(current_user: User = Depends(get_current_user)):

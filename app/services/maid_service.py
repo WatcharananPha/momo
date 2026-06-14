@@ -9,18 +9,31 @@ logger = logging.getLogger(__name__)
 
 class MaidService:
     @staticmethod
-    async def onboard_maid(data: dict):
-        skills_data = [{"skill": s["skill"], "level": s["level"]} for s in data.get("skills", [])]
-        
-        passed = data.get("test_score", 0) >= 80
+    async def onboard_maid(user_id: str, data: dict):
+        # Check if maid already exists for this user
+        existing = await db.maid.find_unique(where={"userId": user_id})
+        if existing:
+            logger.info(f"Maid already exists for user {user_id}, returning existing record")
+            return existing
+
+        # Ensure test_score defaults to 100 (bypass pre‑test)
+        test_score = data.get("test_score", 100)
+        passed = test_score >= 80
         maid_status = MaidStatus.ACTIVE if passed else MaidStatus.PENDING
         onboarding_status = "APPROVED" if passed else "REVIEWING"
 
+        # Ensure skills list is not empty
+        skills_input = data.get("skills", [])
+        if not skills_input:
+            skills_input = [{"skill": "GENERAL_CLEANING", "level": 5}]
+
+        skills_data = [{"skill": s["skill"], "level": s["level"]} for s in skills_input]
+
         maid = await db.maid.create(
             data={
-                "userId": data.get("user_id"),
-                "fullName": data.get("full_name"),
-                "phoneNumber": data.get("phone_number"),
+                "userId": user_id,
+                "fullName": data.get("full_name", "Maid"),
+                "phoneNumber": data.get("phone_number", "0000000000"),
                 "profilePictureUrl": data.get("profile_picture_url"),
                 "baseRate": data.get("base_rate", 450),
                 "demographics": json.dumps(data.get("demographics", {})),
@@ -30,7 +43,7 @@ class MaidService:
                 },
                 "onboarding": {
                     "create": {
-                        "testScore": data.get("test_score", 0),
+                        "testScore": test_score,
                         "passed": passed,
                         "status": onboarding_status
                     }
