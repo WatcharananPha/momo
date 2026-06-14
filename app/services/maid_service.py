@@ -126,7 +126,7 @@ class MaidService:
             "tier": maid.tier,
             "rating": maid.rating,
             "job_completed": maid.jobCompleted,
-            "skills": [{"skill": s.skill, "level": s.level, "rating": s.rating} for s in maid.skills] if maid.skills else []
+            "skills": [{"skill": s.skill, "level": s.level} for s in maid.skills] if maid.skills else []
         }
 
     @staticmethod
