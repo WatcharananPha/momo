@@ -54,6 +54,11 @@ const translations = {
         "REPAIR": "ซ่อมแซม",
         "verified_pro": "พนักงานมืออาชีพ",
         "premium_eq": "อุปกรณ์ครบชุด",
+        "join_membership": "สมัครสมาชิก",
+        "referral_code": "โค้ดแนะนำเพื่อน",
+        "copy_link": "คัดลอกลิงก์",
+        "referral_link": "ลิงก์แนะนำเพื่อน",
+        "packages_title": "เลือกแพ็กเกจสมาชิก"
     },
     en: {
         "greeting_hello": "Hello,",
@@ -110,6 +115,11 @@ const translations = {
         "REPAIR": "Repair",
         "verified_pro": "Verified Professional",
         "premium_eq": "Premium Equipment",
+        "join_membership": "Join Membership",
+        "referral_code": "Referral Code",
+        "copy_link": "Copy Link",
+        "referral_link": "Referral Link",
+        "packages_title": "Credit Packages"
     }
 };
 

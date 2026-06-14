@@ -159,6 +159,33 @@ function populateProfileUI(maid) {
     document.getElementById('maid-tier').textContent = maid.tier;
     document.getElementById('maid-rating').textContent = maid.rating.toFixed(1);
     document.getElementById('maid-jobs').textContent = maid.job_completed;
+    renderSkills(maid);
+}
+
+function renderSkills(maid) {
+    let container = document.getElementById('skills-container');
+    if (!container) {
+        const parent = document.getElementById('maid-jobs')?.parentElement;
+        if (!parent) return;
+        const skillsDiv = document.createElement('div');
+        skillsDiv.id = 'skills-container';
+        skillsDiv.innerHTML = '<h4 class="text-[12px] font-bold text-white/70 uppercase tracking-widest mb-2">Skills</h4><div id="skills-list" class="flex flex-wrap gap-1"></div>';
+        parent.appendChild(skillsDiv);
+        container = skillsDiv;
+    }
+    const list = document.getElementById('skills-list');
+    if (!list) return;
+    list.innerHTML = '';
+    if (!maid.skills || maid.skills.length === 0) {
+        list.innerHTML = '<span class="text-[10px] text-white/50">No skills recorded</span>';
+        return;
+    }
+    maid.skills.forEach(s => {
+        const skillEl = document.createElement('span');
+        skillEl.className = 'bg-white/10 text-white text-[10px] px-2 py-1 rounded-full font-medium';
+        skillEl.textContent = `${s.skill} (Lv.${s.level}) ${s.rating ? '⭐'+s.rating.toFixed(1) : ''}`;
+        list.appendChild(skillEl);
+    });
 }
 
 async function startOnboarding() {

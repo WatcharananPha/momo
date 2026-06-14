@@ -144,13 +144,13 @@ class BookingService:
                 status_code=400, detail="Booking is not in matching state"
             )
 
-        # Step 16-19: Verify and Deduct Credits (Bypassed in Phase 1)
-        # await CreditService.deduct_credits(
-        #     user_id=booking.userId,
-        #     amount=booking.creditCost,
-        #     reference_id=booking.id,
-        #     description=f"Booking {booking.referenceCode}",
-        # )
+        # Step 16-19: Verify and Deduct Credits
+        await CreditService.deduct_credits(
+            user_id=booking.userId,
+            amount=booking.creditCost,
+            reference_id=booking.id,
+            description=f"Booking {booking.referenceCode}"
+        )
 
         # Step 20: Update Booking Status CONFIRMED
         updated_booking = await db.booking.update(
@@ -195,6 +195,17 @@ class BookingService:
                 LineService.push_message(
                     updated_booking.user.lineUid, status_msgs[status]
                 )
+
+        # After job completion, update maid stats and possibly tier
+        if status == BookingStatus.COMPLETED:
+            if updated_booking.maidId:
+                # Increment maid's completed jobs
+                await db.maid.update(
+                    where={"id": updated_booking.maidId},
+                    data={"jobCompleted": {"increment": 1}}
+                )
+                # Re‑evaluate maid tier and rate
+                await MaidService.sync_maid_tier(updated_booking.maidId)
 
         return updated_booking
 
