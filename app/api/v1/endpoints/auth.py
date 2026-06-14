@@ -4,7 +4,29 @@ from app.schemas.auth import GuestSessionResponse, LineLoginDto, AuthResponse
 from app.core.config import settings
 import requests
 
+from app.core.database import db
+
 router = APIRouter()
+
+@router.get("/mock-maid")
+async def get_mock_maid_token():
+    """Debug/Local endpoint to get a mock token for the first maid in the database"""
+    first_maid = await db.maid.find_first()
+    if not first_maid:
+        raise HTTPException(
+            status_code=404, 
+            detail="No maids found in database. Please run seed.py first."
+        )
+    
+    from app.core.security import create_access_token
+    token = create_access_token(data={"sub": first_maid.userId, "isGuest": False})
+    
+    return {
+        "access_token": token,
+        "maid_id": first_maid.id,
+        "full_name": first_maid.fullName
+    }
+
 
 @router.get("/guest", response_model=GuestSessionResponse)
 async def get_guest_session():

@@ -89,6 +89,36 @@ window.showToast = function(message, type = 'info') {
 };
 
 async function initMaidApp() {
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+    if (isLocalhost) {
+        console.log("Localhost detected: bypassing LINE login and obtaining mock maid token...");
+        try {
+            const res = await fetch(`${API_BASE}/auth/mock-maid`);
+            if (res.ok) {
+                const data = await res.json();
+                accessToken = data.access_token;
+                localStorage.setItem('momo_maid_token', accessToken);
+                console.log("Obtained mock token for maid:", data.full_name);
+                await checkMaidProfile();
+            } else {
+                showToast("Please run seed.py to populate database", "error");
+            }
+        } catch (e) {
+            console.error("Local token fetch failed:", e);
+        } finally {
+            setTimeout(() => {
+                document.getElementById('loading').style.opacity = '0';
+                setTimeout(() => document.getElementById('loading').style.display = 'none', 400);
+                
+                if (isPartnerActive) {
+                    document.getElementById('app-content').classList.add('visible');
+                }
+            }, 800);
+        }
+        return;
+    }
+
     try {
         await liff.init({ liffId: LIFF_ID });
         
