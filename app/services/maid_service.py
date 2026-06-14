@@ -107,7 +107,26 @@ class MaidService:
                     "maidId": maid.id
                 }
             )
-            return updated_job
+
+        # After updating, fetch customer details for a direct connection
+        accepted_job = await db.booking.find_unique(where={"id": booking_id})
+        customer = None
+        if accepted_job:
+            customer = await db.user.find_unique(where={"id": accepted_job.userId})
+
+        customer_name = customer.displayName if customer else "Customer"
+        customer_phone = None
+        try:
+            customer_phone = customer.phoneNumber if customer else None
+        except AttributeError:
+            customer_phone = None
+
+        return {
+            "booking_id": booking_id,
+            "status": "CONFIRMED",
+            "customer_name": customer_name,
+            "customer_phone": customer_phone or "",
+        }
 
     @staticmethod
     async def get_maid_profile(maid_id: str):

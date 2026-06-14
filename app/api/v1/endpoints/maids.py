@@ -40,7 +40,7 @@ async def get_pending_jobs(current_user: User = Depends(get_current_user)):
 
 @router.post("/jobs/{booking_id}/accept")
 async def accept_job(booking_id: str = Path(...), current_user: User = Depends(get_current_user)):
-    """Accept a broadcasted job"""
+    """Accept a broadcasted job and return customer connection details"""
     return await MaidService.accept_job(current_user.id, booking_id)
 
 @router.get("/nearby", response_model=List[MaidProfileResponse])

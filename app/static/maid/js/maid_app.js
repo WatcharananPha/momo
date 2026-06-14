@@ -5,6 +5,7 @@ let accessToken = localStorage.getItem('momo_maid_token');
 let currentMaidData = null;
 let currentActiveJobId = null;
 let locationWatchId = null;
+let currentCustomerPhone = '';
 
 function startLocationTracking(bookingId) {
     if (!navigator.geolocation) {
@@ -290,43 +291,43 @@ async function acceptJob(btn, jobId, type, location, customerName, notes, tagsSt
         });
         
         if (res.ok) {
-            btn.parentElement.style.display = 'none';
+            const resp = await res.json();
+            const connectedName = resp.customer_name || customerName;
+            currentCustomerPhone = resp.customer_phone || '';
             currentActiveJobId = jobId;
+            btn.parentElement.style.display = 'none';
             
-            // Show Active Job Section
+            // Show Active Job Section with connection UI
             const activeSection = document.getElementById('active-job-section');
             document.getElementById('active-job-type').textContent = type;
             document.getElementById('active-job-location').textContent = location;
             
-            // Add Job Instructions
-            const tags = tagsStr ? tagsStr.split(',') : [];
-            const tagsHtml = tags.map(tag => `<span class="bg-white/10 text-white text-[10px] px-2 py-1 rounded font-bold uppercase border border-white/10">${tag}</span>`).join(' ');
-            
-            const instructionHtml = `
-                <div class="mt-6 pt-6 border-t border-white/10">
-                    <p class="text-[10px] font-bold text-white/50 uppercase tracking-widest mb-3">Job Instructions</p>
-                    <div class="flex items-center gap-3 mb-4">
-                        <div class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center font-bold text-white">${customerName.charAt(0)}</div>
-                        <div>
-                            <p class="font-bold text-[14px] text-white">${customerName}</p>
-                            <p class="text-[11px] text-white/60">Preferred Customer</p>
-                        </div>
-                    </div>
-                    <div class="flex flex-wrap gap-2 mb-4">${tagsHtml}</div>
-                    <div class="bg-white/5 rounded-xl p-3 border border-white/5">
-                        <p class="text-[12px] text-white/80 italic">"${notes || 'No special notes'}"</p>
-                    </div>
-                </div>
-            `;
-            
-            // Insert before the status button
-            const statusBtn = document.getElementById('status-btn');
+            // Remove any previous instruction container
             const existingInstr = document.getElementById('job-instr-container');
             if (existingInstr) existingInstr.remove();
             
             const instrContainer = document.createElement('div');
             instrContainer.id = 'job-instr-container';
-            instrContainer.innerHTML = instructionHtml;
+            instrContainer.innerHTML = `
+                <div class="mt-4 pt-4 border-t border-white/10">
+                    <p class="text-[10px] font-bold text-white/50 uppercase tracking-widest mb-2">Connected to</p>
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center font-bold text-white">${connectedName.charAt(0)}</div>
+                        <div>
+                            <p class="font-bold text-[14px] text-white">${connectedName}</p>
+                            <p class="text-[11px] text-white/60">Customer</p>
+                        </div>
+                    </div>
+                    ${ currentCustomerPhone 
+                        ? `<button class="w-full bg-green-500 text-white font-bold text-[14px] py-3 rounded-xl mt-2 shadow-lg" onclick="window.open('tel:${currentCustomerPhone}')">Call Customer</button>`
+                        : `<button class="w-full bg-green-500 text-white font-bold text-[14px] py-3 rounded-xl mt-2 shadow-lg opacity-50 cursor-not-allowed" disabled>No Phone Number</button>` 
+                    }
+                    <button class="w-full bg-rose-400 text-white font-bold text-[14px] py-3 rounded-xl mt-2 shadow-lg" onclick="endConnection()">End Connection</button>
+                </div>
+            `;
+            
+            const statusBtn = document.getElementById('status-btn');
+            statusBtn.style.display = 'none';
             statusBtn.parentElement.insertBefore(instrContainer, statusBtn);
             
             activeSection.classList.remove('hidden');
@@ -344,6 +345,25 @@ async function acceptJob(btn, jobId, type, location, customerName, notes, tagsSt
     }
 }
 
+function endConnection() {
+    // Hide the active job section and clean up
+    document.getElementById('active-job-section').classList.add('hidden');
+    currentActiveJobId = null;
+    currentCustomerPhone = '';
+    stopLocationTracking();
+    
+    // Remove the connection UI
+    const instr = document.getElementById('job-instr-container');
+    if (instr) instr.remove();
+    
+    // Re-show the status button in case it was hidden
+    const statusBtn = document.getElementById('status-btn');
+    if (statusBtn) {
+        statusBtn.style.display = 'block';
+        statusBtn.textContent = "I have Arrived";
+    }
+}
+
 let jobStep = 1;
 const STATUS_MAP = {
     1: 'PENDING',
@@ -352,6 +372,7 @@ const STATUS_MAP = {
     4: 'COMPLETED'
 };
 
+// The nextStatus function is retained for future use but the current flow no longer invokes it.
 async function nextStatus() {
     if (!currentActiveJobId) return;
     
