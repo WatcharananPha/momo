@@ -119,7 +119,7 @@ async function initCoreLiff(requireAuth = true) {
             hideLoading();
         } else if (requireAuth) {
             console.log("Not logged in, redirecting to LINE login...");
-            liff.login({ redirectUri: window.location.origin + "/liff" });
+            liff.login({ redirectUri: window.location.href });
         } else {
             hideLoading();
         }
@@ -133,7 +133,7 @@ async function initCoreLiff(requireAuth = true) {
 window.handleGetStarted = function() {
     console.log("Onboarding: Get Started clicked");
     if (!liff.isLoggedIn()) {
-        liff.login({ redirectUri: window.location.origin + "/liff" });
+        liff.login({ redirectUri: window.location.href });
     } else {
         const intro = document.getElementById('intro-page');
         if (intro) intro.style.display = 'none';
@@ -155,7 +155,7 @@ async function loginToBackend(idToken) {
             if (res.status === 401 && (errorString.includes("expired") || errorString.includes("Invalid LINE ID Token"))) {
                 liff.logout();
                 localStorage.removeItem('momo_token');
-                liff.login({ redirectUri: window.location.origin + "/liff" });
+                liff.login({ redirectUri: window.location.href });
                 return;
             }
             throw new Error(errData.detail || "Authentication failed");
