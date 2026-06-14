@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from contextlib import asynccontextmanager
 import os
 import logging
@@ -47,6 +47,16 @@ def health_check():
     return {"status": "ok"}
 
 
+@app.get("/liff/maid", response_class=HTMLResponse)
+async def liff_maid_page_index():
+    return await serve_maid_page("index")
+
+
+@app.get("/liff/maid/{page}", response_class=HTMLResponse)
+async def liff_maid_page_dynamic(page: str):
+    return await serve_maid_page(page)
+
+
 @app.get("/liff", response_class=HTMLResponse)
 async def liff_page_index():
     return await serve_liff_page("index")
@@ -76,14 +86,14 @@ async def serve_liff_page(page: str):
     return HTMLResponse("LIFF page not found.", status_code=404)
 
 
-@app.get("/maid", response_class=HTMLResponse)
+@app.get("/maid")
 async def maid_page_index():
-    return await serve_maid_page("index")
+    return RedirectResponse(url="/liff/maid")
 
 
-@app.get("/maid/{page}", response_class=HTMLResponse)
+@app.get("/maid/{page}")
 async def maid_page_dynamic(page: str):
-    return await serve_maid_page(page)
+    return RedirectResponse(url=f"/liff/maid/{page}")
 
 
 async def serve_maid_page(page: str):
