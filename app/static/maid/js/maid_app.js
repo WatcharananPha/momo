@@ -165,7 +165,19 @@ if (!localStorage.getItem('momo_completed_jobs')) {
 if (!localStorage.getItem('momo_active_job')) {
     localStorage.setItem('momo_active_job', '');
 }
-if (!localStorage.getItem('momo_schedule') || localStorage.getItem('momo_schedule') === '{}') {
+let needScheduleInit = false;
+try {
+    const stored = localStorage.getItem('momo_schedule');
+    if (!stored || stored === '{}') {
+        needScheduleInit = true;
+    } else {
+        JSON.parse(stored);
+    }
+} catch (e) {
+    needScheduleInit = true;
+}
+
+if (needScheduleInit) {
     const defaultSchedule = {
         monday: { morning: true, afternoon: true, evening: false },
         tuesday: { morning: true, afternoon: false, evening: false },
@@ -1096,7 +1108,16 @@ function updateScheduleUI() {
         sunday: { morning: false, afternoon: false, evening: false }
     };
     
-    let schedule = JSON.parse(localStorage.getItem('momo_schedule') || '{}');
+    let schedule = {};
+    try {
+        const stored = localStorage.getItem('momo_schedule');
+        if (stored && stored !== '{}') {
+            schedule = JSON.parse(stored);
+        }
+    } catch (e) {
+        console.error("Failed to parse momo_schedule", e);
+    }
+    
     if (Object.keys(schedule).length === 0) {
         schedule = defaultSchedule;
         localStorage.setItem('momo_schedule', JSON.stringify(defaultSchedule));
