@@ -165,7 +165,7 @@ if (!localStorage.getItem('momo_completed_jobs')) {
 if (!localStorage.getItem('momo_active_job')) {
     localStorage.setItem('momo_active_job', '');
 }
-if (!localStorage.getItem('momo_schedule')) {
+if (!localStorage.getItem('momo_schedule') || localStorage.getItem('momo_schedule') === '{}') {
     const defaultSchedule = {
         monday: { morning: true, afternoon: true, evening: false },
         tuesday: { morning: true, afternoon: false, evening: false },
@@ -1086,7 +1086,22 @@ function updateScheduleUI() {
         vacToggle.checked = vacationMode;
     }
     
-    const schedule = JSON.parse(localStorage.getItem('momo_schedule') || '{}');
+    const defaultSchedule = {
+        monday: { morning: true, afternoon: true, evening: false },
+        tuesday: { morning: true, afternoon: false, evening: false },
+        wednesday: { morning: true, afternoon: true, evening: true },
+        thursday: { morning: false, afternoon: true, evening: false },
+        friday: { morning: true, afternoon: true, evening: false },
+        saturday: { morning: false, afternoon: false, evening: false },
+        sunday: { morning: false, afternoon: false, evening: false }
+    };
+    
+    let schedule = JSON.parse(localStorage.getItem('momo_schedule') || '{}');
+    if (Object.keys(schedule).length === 0) {
+        schedule = defaultSchedule;
+        localStorage.setItem('momo_schedule', JSON.stringify(defaultSchedule));
+    }
+    
     const dayNamesTH = {
         monday: 'จันทร์',
         tuesday: 'อังคาร',
