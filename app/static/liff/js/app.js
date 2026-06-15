@@ -222,8 +222,8 @@ async function shareReferral() {
             headers: { 'Authorization': `Bearer ${accessToken}` }
         });
         const data = await res.json();
-        const referralCode = data.referral_code || 'MOMO888';
-        const shareText = `Try Momo — effortless home care! Use my code ${referralCode} to get 50 bonus points. Sign up here: ${window.location.origin}/liff`;
+        const referralCode = data.referral_code || 'MB888';
+        const shareText = `Try MaidBooking — effortless home care! Use my code ${referralCode} to get 50 bonus points. Sign up here: ${window.location.origin}/liff`;
 
         if (liff.isApiAvailable && liff.isApiAvailable('shareTargetPicker')) {
             await liff.shareTargetPicker([{

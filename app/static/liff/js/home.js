@@ -12,25 +12,11 @@ let rerollsLeft = 3;
 let lastUserLat = null;
 let lastUserLng = null;
 let activeCampaignId = null;          // used for lucky wheel
-let momo_referral_code = 'MOMO888';   // will be populated from point balance
+let momo_referral_code = 'MB888';   // will be populated from point balance
 
 async function initHome() {
     await initCoreLiff(true);
-    hideCreditUI();
     fetchActiveCampaigns();
-}
-
-function hideCreditUI() {
-    // Hide wallet balance card
-    const walletBalanceEl = document.getElementById('wallet-balance');
-    if (walletBalanceEl && walletBalanceEl.parentElement && walletBalanceEl.parentElement.parentElement) {
-        walletBalanceEl.parentElement.parentElement.style.display = 'none';
-    }
-    // Hide points card
-    const pointBalanceEl = document.getElementById('point-balance');
-    if (pointBalanceEl && pointBalanceEl.parentElement && pointBalanceEl.parentElement.parentElement) {
-        pointBalanceEl.parentElement.parentElement.style.display = 'none';
-    }
 }
 
 async function fetchActiveCampaigns() {

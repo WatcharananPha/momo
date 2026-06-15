@@ -211,7 +211,7 @@ async function handleNoActiveOrder() {
     document.getElementById('status-title').textContent = "Ready for Service";
     document.getElementById('distance-display').innerHTML = '<span class="w-2 h-2 bg-slate-300 rounded-full inline-block"></span> No active tracking';
     document.getElementById('eta-display-small').textContent = "-- min";
-    document.getElementById('maid-name').textContent = "Momo Professional";
+    document.getElementById('maid-name').textContent = "MaidBooking";
     document.getElementById('maid-tier').textContent = "• Standing by";
     
     // Use permissive user-driven geolocation flow. Some in-app browsers require a user gesture
@@ -427,8 +427,9 @@ function updateTrackingUI(booking) {
     document.getElementById('status-title').textContent = titleMap[status] || 'Processing';
 
     if (booking.maid) {
-        document.getElementById('maid-name').textContent = booking.maid.fullName || "Professional Assigned";
-        document.getElementById('maid-tier').textContent = `• ${booking.maid.tier || 'PRO'} Tier`;
+        document.getElementById('maid-name').textContent = booking.maid.fullName || "Maid Assigned";
+        const tierName = (booking.maid.tier === 'PRO' || !booking.maid.tier) ? 'Elite' : booking.maid.tier;
+        document.getElementById('maid-tier').textContent = `• ${tierName} Tier`;
         if (booking.maid.profilePictureUrl) {
             document.getElementById('maid-pic').src = booking.maid.profilePictureUrl;
         }

@@ -1,17 +1,17 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="th">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Momo Pro — Partner Portal</title>
+    <title>MaidBooking</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-    <link rel="stylesheet" href="/static/maid/css/maid_style.css">
+    <link rel="stylesheet" href="/static/maid/css/maid_style.css?v=1.1.1">
     <script>
         tailwind.config = {
             theme: {
                 extend: {
-                    fontFamily: { sans: ['"Inter"', 'sans-serif'] },
+                    fontFamily: { sans: ['"Inter"', '"Noto Sans Thai"', 'sans-serif'] },
                     colors: {
                         partner: { DEFAULT: '#1e40af', light: '#3b82f6', dark: '#1e3a8a', surface: '#eff6ff' },
                         slate: { 800: '#1e293b', 500: '#64748b', 400: '#94a3b8', 100: '#f1f5f9', 50: '#f8fafc' }
@@ -25,184 +25,503 @@
 
 <div id="app-container">
     
+    <!-- 1. Loading Spinner -->
     <div id="loading">
         <div class="spinner-large"></div>
-        <div class="font-bold tracking-widest uppercase text-sm mt-2 text-white">Momo Partner</div>
+        <div class="font-black tracking-widest uppercase text-sm mt-3 text-white/90">MaidBooking</div>
     </div>
 
-    <!-- Intro / Onboarding Screen -->
-    <div id="intro-page" class="absolute inset-0 bg-white z-40 hidden flex-col">
-        <div class="flex-1 p-8 flex flex-col justify-center items-center text-center">
-            <div class="w-24 h-24 bg-partner-surface rounded-full flex items-center justify-center mb-6">
+    <!-- 2. Onboarding / Pre-Test Screen -->
+    <div id="intro-page" class="absolute inset-0 bg-white z-40 hidden flex-col overflow-y-auto scroll-hide">
+        <!-- Main Info -->
+        <div id="quiz-intro" class="flex-1 p-8 flex flex-col justify-center items-center text-center">
+            <div class="w-24 h-24 bg-partner-surface rounded-3xl flex items-center justify-center mb-6 shadow-premium">
                 <svg class="w-12 h-12 text-partner" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
                     <path d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path>
                 </svg>
             </div>
-            <h2 class="font-extrabold text-[28px] text-slate-800 leading-tight mb-3">Join as a Pro</h2>
-            <p class="text-slate-500 text-[14px] mb-8">Complete the onboarding test to activate your partner account and start receiving jobs.</p>
+            <h2 class="font-black text-[26px] text-slate-800 leading-tight mb-3">เข้าร่วมเป็นผู้ให้บริการกับ MaidBooking</h2>
+            <p class="text-slate-500 text-[14px] leading-relaxed mb-8">ทำแบบทดสอบมาตรฐานการให้บริการและการรักษาความปลอดภัย เพื่อเปิดใช้งานบัญชีผู้ให้บริการของคุณ</p>
             
             <div class="w-full bg-slate-50 border border-slate-100 rounded-2xl p-5 mb-8 text-left">
-                <p class="font-bold text-[14px] text-slate-800 mb-2">Pre-test Requirements:</p>
-                <ul class="text-[12px] text-slate-500 space-y-2">
-                    <li class="flex items-center gap-2"><div class="w-1.5 h-1.5 rounded-full bg-partner"></div> 10 Multiple choice questions</li>
-                    <li class="flex items-center gap-2"><div class="w-1.5 h-1.5 rounded-full bg-partner"></div> 80% passing score required</li>
-                    <li class="flex items-center gap-2"><div class="w-1.5 h-1.5 rounded-full bg-partner"></div> Service quality & safety rules</li>
+                <p class="font-bold text-[14px] text-slate-800 mb-2">เงื่อนไขการทำแบบทดสอบ:</p>
+                <ul class="text-[12px] text-slate-500 space-y-2.5">
+                    <li class="flex items-center gap-2">
+                        <div class="w-2 h-2 rounded-full bg-partner"></div> 
+                        มีคำถามแบบเลือกตอบทั้งหมด 3 ข้อ
+                    </li>
+                    <li class="flex items-center gap-2">
+                        <div class="w-2 h-2 rounded-full bg-partner"></div> 
+                        ต้องผ่านการตอบถูก 100% (3/3 ข้อ)
+                    </li>
+                    <li class="flex items-center gap-2">
+                        <div class="w-2 h-2 rounded-full bg-partner"></div> 
+                        เน้นมารยาท ความปลอดภัย และขั้นตอนการทำงาน
+                    </li>
                 </ul>
             </div>
 
-            <button onclick="startOnboarding()" class="w-full bg-partner text-white font-bold py-4 rounded-[16px] shadow-lg shadow-partner/20 btn-press">
-                Start Pre-Test
+            <button onclick="showQuizQuestions()" class="w-full bg-partner text-white font-bold py-4 rounded-xl shadow-lg shadow-partner/20 btn-press">
+                เริ่มทำแบบทดสอบ
+            </button>
+        </div>
+
+        <!-- Quiz Questions Page -->
+        <div id="quiz-question-container" class="flex-1 p-6 flex-col justify-between hidden">
+            <div>
+                <!-- Progress bar -->
+                <div class="flex justify-between items-center mb-6">
+                    <span class="text-xs font-bold text-slate-400 uppercase tracking-widest" id="quiz-progress-text">คำถามข้อที่ 1 จาก 3</span>
+                    <span class="text-xs font-black text-partner bg-partner-surface px-2.5 py-1 rounded-full" id="quiz-timer">เวลารวม: 00:00</span>
+                </div>
+                <div class="w-full bg-slate-100 h-2 rounded-full mb-6">
+                    <div id="quiz-progress-bar" class="bg-partner h-2 rounded-full transition-all duration-300" style="width: 33%"></div>
+                </div>
+
+                <div class="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm mb-6">
+                    <h3 class="font-bold text-slate-800 text-[16px] leading-snug" id="quiz-question-title">
+                        หากคุณเดินทางไปถึงบ้านลูกค้าและเคาะประตูแล้วไม่มีคนตอบรับ คุณควรทำอย่างไร?
+                    </h3>
+                </div>
+
+                <div class="space-y-3" id="quiz-options-container">
+                    <!-- Options rendered dynamically -->
+                </div>
+            </div>
+
+            <button id="quiz-next-btn" disabled onclick="handleQuizNext()" class="w-full mt-6 bg-slate-200 text-slate-400 font-bold py-4 rounded-xl cursor-not-allowed transition-all">
+                ถัดไป
+            </button>
+        </div>
+
+        <!-- Quiz Result Screen -->
+        <div id="quiz-result-page" class="flex-1 p-8 flex flex-col justify-center items-center text-center hidden">
+            <div id="quiz-result-icon" class="w-24 h-24 rounded-full flex items-center justify-center mb-6"></div>
+            <h2 class="font-black text-[24px] text-slate-800 mb-2" id="quiz-result-title">สอบผ่าน!</h2>
+            <p class="text-slate-500 text-[14px] mb-8 leading-relaxed" id="quiz-result-desc">คุณตอบคำถามถูกต้องครบทุกข้อ ระบบพร้อมอนุมัติบัญชีโปรของคุณแล้ว</p>
+            
+            <div class="w-full bg-slate-50 border border-slate-100 rounded-2xl p-5 mb-8 text-left hidden" id="quiz-fail-details">
+                <p class="font-bold text-[14px] text-red-500 mb-1">เฉลยข้อผิดพลาด:</p>
+                <p class="text-[12px] text-slate-500" id="quiz-fail-text"></p>
+            </div>
+
+            <button id="quiz-result-action-btn" onclick="retryQuiz()" class="w-full bg-partner text-white font-bold py-4 rounded-xl shadow-lg btn-press">
+                ลองใหม่อีกครั้ง
             </button>
         </div>
     </div>
 
-    <!-- Main Dashboard -->
-    <div id="app-content" class="h-full w-full overflow-y-auto scroll-hide pb-[100px]">
+    <!-- 3. Main Application Content Container -->
+    <div id="app-content" class="pb-[90px] hidden">
         <div class="h-[env(safe-area-inset-top,0px)] bg-partner"></div>
 
-        <!-- Profile Header -->
-        <header class="bg-partner px-6 pt-8 pb-10 rounded-b-[32px] text-white shadow-md relative">
-            <div class="flex items-center justify-between mb-6">
-                <div class="flex items-center gap-4">
-                    <div class="relative">
-                        <img id="maid-picture" src="https://ui-avatars.com/api/?name=Partner&background=eff6ff&color=1e40af" class="w-14 h-14 rounded-2xl object-cover border-2 border-white/20" alt="Profile">
-                        <div class="absolute -bottom-1 -right-1 w-4 h-4 bg-green-400 border-2 border-partner rounded-full"></div>
+        <!-- ───────────────────────────────────────────────────────────── -->
+        <!-- VIEW A: JOBS LIST VIEW (งาน) -->
+        <!-- ───────────────────────────────────────────────────────────── -->
+        <div id="view-jobs" class="view-section">
+            <!-- Header -->
+            <header class="bg-partner px-6 pt-6 pb-8 rounded-b-[32px] text-white shadow-md relative">
+                <div class="flex items-center justify-between gap-3 mb-4">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <div class="relative shrink-0">
+                            <img id="maid-picture" src="https://ui-avatars.com/api/?name=Maid&background=eff6ff&color=1e40af" class="w-12 h-12 rounded-2xl object-cover border-2 border-white/20" alt="Profile">
+                            <div class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-400 border-2 border-partner rounded-full animate-ping"></div>
+                            <div class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 border-2 border-partner rounded-full"></div>
+                        </div>
+                        <div class="min-w-0">
+                            <p class="text-[9px] font-bold text-white/60 uppercase tracking-widest mb-0.5 truncate">MaidBooking</p>
+                            <h1 class="font-black text-base xs:text-[18px] leading-none text-white flex items-center gap-1.5 min-w-0">
+                                <span id="maid-name" class="truncate block">คุณสมศรี ใจดี</span>
+                                <span class="bg-amber-400 text-slate-900 text-[9px] font-black px-1.5 py-0.5 rounded shrink-0" id="maid-tier-badge">PRO</span>
+                            </h1>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0">
+                        <!-- Switch Status Online / Offline -->
+                        <div class="bg-white/10 px-2.5 py-1.5 rounded-full border border-white/15 flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" id="status-dot"></span>
+                            <span class="text-[9px] font-black uppercase tracking-wider text-white/80" id="status-text">พร้อมรับงาน</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stats summary grid -->
+                <div class="flex items-center justify-between mt-4 bg-white/10 rounded-2xl p-3 border border-white/10 backdrop-blur-sm text-center">
+                    <div class="flex-1 min-w-0">
+                        <p class="text-[9px] uppercase font-bold text-white/50 mb-0.5 truncate">คะแนนรีวิว</p>
+                        <div class="flex items-center justify-center gap-0.5 text-white">
+                            <svg class="w-3.5 h-3.5 text-amber-300 fill-current shrink-0" viewBox="0 0 24 24"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
+                            <span class="text-[14px] font-black" id="maid-rating">4.8</span>
+                        </div>
+                    </div>
+                    <div class="w-[1px] h-6 bg-white/20 shrink-0"></div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-[9px] uppercase font-bold text-white/50 mb-0.5 truncate">งานที่สำเร็จ</p>
+                        <p class="text-[14px] font-black text-white truncate" id="maid-jobs">142</p>
+                    </div>
+                    <div class="w-[1px] h-6 bg-white/20 shrink-0"></div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-[9px] uppercase font-bold text-white/50 mb-0.5 truncate">ยอดเงินรอถอน</p>
+                        <p class="text-[14px] font-black text-white truncate" id="quick-wallet-balance">฿2,450</p>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Auto Match Mode Switch Banner -->
+            <div class="mx-6 mt-5 bg-slate-900 rounded-3xl p-4 text-white flex items-center justify-between shadow-premium relative overflow-hidden">
+                <div class="absolute -right-6 -bottom-6 w-24 h-24 bg-partner/20 rounded-full blur-xl"></div>
+                <div class="flex items-center gap-3 relative z-10">
+                    <div class="w-10 h-10 rounded-2xl bg-partner/30 flex items-center justify-center text-partner-light border border-partner/20">
+                        <svg class="w-5 h-5 text-partner-light animate-pulse" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.3 16.2L21 21m-6-6l-1.5-1.5M12 9a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 7.5a8.5 8.5 0 11-17 0 8.5 8.5 0 0117 0z" />
+                        </svg>
                     </div>
                     <div>
-                        <p class="text-[11px] font-bold text-white/60 uppercase tracking-widest mb-0.5">Welcome back</p>
-                        <h1 class="font-extrabold text-[20px] leading-none" id="maid-name">Partner</h1>
+                        <h4 class="font-bold text-[13px] text-white">โหมดรับงานด่วนอัตโนมัติ</h4>
+                        <p class="text-[11px] text-slate-400">ระบบจะจับคู่และกดรับงานให้คุณทันที</p>
                     </div>
                 </div>
-                <div class="bg-white/10 p-2.5 rounded-xl border border-white/10">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                <div class="flex items-center shrink-0">
+                    <input type="checkbox" id="auto-accept-toggle" class="auto-match-toggle-input" onchange="toggleAutoAccept(this)" />
+                    <label for="auto-accept-toggle" class="auto-match-toggle-label">Toggle</label>
                 </div>
             </div>
 
-            <div class="bg-white/10 border border-white/20 rounded-2xl p-4 flex items-center justify-between backdrop-blur-sm">
-                <div class="text-center flex-1">
-                    <p class="text-[10px] uppercase font-bold text-white/60 mb-1">Tier</p>
-                    <p class="text-[16px] font-black tracking-tight" id="maid-tier">PRO</p>
-                </div>
-                <div class="w-[1px] h-8 bg-white/20"></div>
-                <div class="text-center flex-1">
-                    <p class="text-[10px] uppercase font-bold text-white/60 mb-1">Rating</p>
-                    <div class="flex items-center justify-center gap-1">
-                        <svg class="w-3.5 h-3.5 text-yellow-400 fill-current" viewBox="0 0 24 24"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
-                        <p class="text-[16px] font-black tracking-tight" id="maid-rating">4.8</p>
+            <!-- Job Sub-tabs Selector -->
+            <div class="flex px-6 mt-5 border-b border-slate-100">
+                <button id="subtab-available" onclick="switchJobSubTab('available')" class="flex-1 pb-3 text-center text-[13px] font-black text-partner border-b-2 border-partner transition-all">
+                    งานใหม่โพสต์ด่วน (<span id="available-jobs-count">0</span>)
+                </button>
+                <button id="subtab-active" onclick="switchJobSubTab('active')" class="flex-1 pb-3 text-center text-[13px] font-bold text-slate-400 border-b-2 border-transparent hover:text-slate-600 transition-all flex justify-center items-center gap-1.5">
+                    งานที่รับแล้ว
+                    <span id="active-jobs-dot" class="w-2.5 h-2.5 bg-red-500 rounded-full hidden"></span>
+                </button>
+            </div>
+
+            <!-- Main Job Sub-Views -->
+            <div class="px-6 mt-4">
+                
+                <!-- Subview 1: Available Jobs Feed -->
+                <div id="subview-available-jobs" class="flex flex-col gap-4">
+                    <!-- Filter capsules horizontal scroll -->
+                    <div class="flex gap-2 overflow-x-auto scroll-hide py-1">
+                        <button onclick="filterAvailableJobs('ALL')" class="job-filter-btn shrink-0 px-4 py-1.5 rounded-full text-xs font-bold bg-partner text-white border border-partner shadow-sm transition-all">ทั้งหมด</button>
+                        <button onclick="filterAvailableJobs('GENERAL_CLEANING')" class="job-filter-btn shrink-0 px-4 py-1.5 rounded-full text-xs font-bold bg-white text-slate-500 border border-slate-200 hover:border-slate-300 transition-all">ทำความสะอาดทั่วไป</button>
+                        <button onclick="filterAvailableJobs('DEEP_CLEANING')" class="job-filter-btn shrink-0 px-4 py-1.5 rounded-full text-xs font-bold bg-white text-slate-500 border border-slate-200 hover:border-slate-300 transition-all">บิ๊กคลีนนิ่ง</button>
+                        <button onclick="filterAvailableJobs('IRONING')" class="job-filter-btn shrink-0 px-4 py-1.5 rounded-full text-xs font-bold bg-white text-slate-500 border border-slate-200 hover:border-slate-300 transition-all">รีดผ้า</button>
+                        <button onclick="filterAvailableJobs('COOKING')" class="job-filter-btn shrink-0 px-4 py-1.5 rounded-full text-xs font-bold bg-white text-slate-500 border border-slate-200 hover:border-slate-300 transition-all">ทำอาหาร</button>
+                    </div>
+
+                    <!-- Container for Available Job Cards -->
+                    <div class="flex flex-col gap-4 mt-2" id="jobs-container">
+                        <!-- Generated by JS -->
                     </div>
                 </div>
-                <div class="w-[1px] h-8 bg-white/20"></div>
-                <div class="text-center flex-1">
-                    <p class="text-[10px] uppercase font-bold text-white/60 mb-1">Jobs</p>
-                    <p class="text-[16px] font-black tracking-tight" id="maid-jobs">142</p>
-                </div>
-            </div>
-        </header>
 
-        <!-- Broadcast Jobs -->
-        <section class="px-6 mt-6">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="font-bold text-slate-800 text-[16px]">Job Requests <span class="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full ml-1 animate-pulse">NEW</span></h3>
-            </div>
-            
-            <div class="flex flex-col gap-4" id="jobs-container">
-                <!-- Jobs will be rendered here by JS -->
-            </div>
-        </section>
-
-        <!-- Active Job Tracking (Hidden by default, shown when job accepted) -->
-        <section id="active-job-section" class="px-6 mt-8 hidden">
-            <h3 class="font-bold text-slate-800 text-[16px] mb-4">Active Task</h3>
-            <div class="bg-slate-800 rounded-[20px] p-5 text-white shadow-xl relative overflow-hidden">
-                <div class="absolute right-0 top-0 w-32 h-32 bg-white/5 rounded-full blur-xl -mr-10 -mt-10"></div>
-                <div class="relative z-10">
-                    <div class="flex items-center justify-between mb-2">
-                        <span class="bg-partner text-[10px] font-bold px-2 py-1 rounded uppercase tracking-widest">En Route</span>
-                        <span class="font-bold text-[14px]" id="active-job-type">General Cleaning</span>
+                <!-- Subview 2: Active Job Progress -->
+                <div id="subview-active-job" class="flex-col gap-4 hidden">
+                    <!-- Active Task Detail Box -->
+                    <div id="active-job-details-container">
+                        <!-- Filled by JS -->
                     </div>
-                    <h4 class="font-black text-[20px] mb-1" id="active-job-location">Sukhumvit 71, The Line</h4>
-                    <p class="text-[12px] text-slate-400 mb-6">Customer: Awaiting details</p>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- ───────────────────────────────────────────────────────────── -->
+        <!-- VIEW B: SCHEDULE VIEW (ตารางงาน) -->
+        <!-- ───────────────────────────────────────────────────────────── -->
+        <div id="view-schedule" class="view-section hidden">
+            <header class="bg-partner px-6 pt-6 pb-6 rounded-b-[32px] text-white shadow-md">
+                <h1 class="font-black text-[20px] text-white">ตารางรับงานของคุณ</h1>
+                <p class="text-[12px] text-white/70">ตั้งค่าช่วงเวลาที่คุณสะดวกรับงานเพื่อสร้างรายได้</p>
+            </header>
+
+            <div class="px-6 mt-6">
+                <!-- Vacation Mode card -->
+                <div class="bg-white rounded-3xl p-5 border border-slate-100 shadow-premium flex justify-between items-center mb-6">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-2xl bg-amber-50 flex items-center justify-center text-amber-500">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-12.728l.707.707m12.728 12.728l.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z"></path></svg>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-[14px]">โหมดวันหยุดพักร้อน</h4>
+                            <p class="text-[11px] text-slate-400">ปิดการรับงานทั้งหมดชั่วคราว</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center shrink-0">
+                        <input type="checkbox" id="vacation-toggle" class="auto-match-toggle-input" onchange="toggleVacationMode(this)" />
+                        <label for="vacation-toggle" class="auto-match-toggle-label">Toggle</label>
+                    </div>
+                </div>
+
+                <!-- Calendar Weekly Matrix -->
+                <div class="bg-white rounded-3xl p-5 border border-slate-100 shadow-premium mb-6">
+                    <h3 class="font-black text-slate-800 text-[15px] mb-4">ช่วงเวลาเปิดรับงานของสัปดาห์นี้</h3>
                     
-                    <div class="grid grid-cols-4 gap-2 mb-2">
-                        <div class="h-1.5 bg-partner rounded-full"></div>
-                        <div class="h-1.5 bg-slate-600 rounded-full" id="prog-2"></div>
-                        <div class="h-1.5 bg-slate-600 rounded-full" id="prog-3"></div>
-                        <div class="h-1.5 bg-slate-600 rounded-full" id="prog-4"></div>
+                    <div class="flex flex-col gap-4">
+                        <!-- Day Grid Helper -->
+                        <div class="grid grid-cols-4 gap-2 text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b pb-2">
+                            <span class="text-left">วัน</span>
+                            <span>เช้า (8-12)</span>
+                            <span>บ่าย (13-17)</span>
+                            <span>เย็น (18-21)</span>
+                        </div>
+
+                        <!-- Days of Week slots generated dynamically in JS -->
+                        <div id="schedule-days-list" class="flex flex-col gap-3">
+                            <!-- Filled dynamically -->
+                        </div>
+                    </div>
+                    <p class="text-[10px] text-slate-400 mt-4 leading-normal flex items-start gap-1.5 text-break-thai">
+                        <svg class="w-4 h-4 text-partner shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                        <span>หมายเหตุ: กดที่สล็อตเวลาเพื่อสลับเป็นเปิดให้บริการ (สีฟ้า) หรือปิดให้บริการ (สีเทา)</span>
+                    </p>
+                </div>
+
+                <!-- Upcoming Scheduled Jobs -->
+                <div class="mb-6">
+                    <h3 class="font-black text-slate-800 text-[15px] mb-4">งานที่รอถึงกำหนดการ</h3>
+                    <div class="flex flex-col gap-3" id="upcoming-jobs-schedule">
+                        <!-- Generated by JS -->
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- ───────────────────────────────────────────────────────────── -->
+        <!-- VIEW C: EARNINGS VIEW (รายได้) -->
+        <!-- ───────────────────────────────────────────────────────────── -->
+        <div id="view-earnings" class="view-section hidden">
+            <header class="bg-partner px-6 pt-6 pb-6 rounded-b-[32px] text-white shadow-md">
+                <h1 class="font-black text-[20px] text-white">กระเป๋าเงินและรายได้</h1>
+                <p class="text-[12px] text-white/70">ข้อมูลยอดเงินสะสมและการถอนเงินเข้าบัญชีธนาคาร</p>
+            </header>
+
+            <div class="px-6 mt-6">
+                <!-- E-wallet Card -->
+                <div class="bg-gradient-to-tr from-partner-dark to-partner-light rounded-[28px] p-6 text-white shadow-glow-blue relative overflow-hidden mb-6">
+                    <div class="absolute -right-10 -top-10 w-36 h-36 bg-white/5 rounded-full blur-2xl"></div>
+                    <div class="absolute -left-10 -bottom-10 w-28 h-28 bg-blue-400/10 rounded-full blur-xl"></div>
+                    
+                    <div class="relative z-10 flex flex-col justify-between h-full">
+                        <div>
+                            <span class="text-[10px] font-bold text-white/70 uppercase tracking-widest">ยอดเงินในกระเป๋า</span>
+                            <div class="flex items-baseline gap-1 mt-1">
+                                <span class="text-[28px] font-black tracking-tight" id="earnings-wallet-balance">฿2,450.00</span>
+                            </div>
+                        </div>
+
+                        <div class="flex gap-3 mt-6 border-t border-white/10 pt-4">
+                            <button onclick="openWithdrawModal()" class="flex-1 bg-white text-partner font-black text-xs py-3 rounded-xl shadow btn-press">
+                                ถอนเงินเข้าธนาคาร
+                            </button>
+                            <button onclick="showToast('โอนเงินเข้า PromptPay เป็นบัญชีด่วนเริ่มต้น', 'info')" class="bg-white/10 text-white font-bold text-xs px-4 py-3 rounded-xl border border-white/10 hover:bg-white/20 transition-all btn-press">
+                                บัญชีรับเงิน
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Weekly summary matrix -->
+                <div class="bg-white rounded-3xl p-5 border border-slate-100 shadow-premium mb-6">
+                    <h3 class="font-black text-slate-800 text-[15px] mb-4">สรุปรายได้สัปดาห์นี้</h3>
+                    
+                    <!-- Chart bar container -->
+                    <div class="chart-bar-container px-2 mb-4" id="earnings-chart-container">
+                        <!-- Injected by JS (Mon-Sun columns) -->
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4 border-t pt-4">
+                        <div>
+                            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">ยอดรวมสัปดาห์นี้</p>
+                            <p class="font-black text-slate-800 text-[18px]" id="earnings-weekly-total">฿1,100</p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-0.5">งานที่ทำสำเร็จ</p>
+                            <p class="font-black text-slate-800 text-[18px]" id="earnings-weekly-jobs">2 งาน</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Transaction History -->
+                <div class="mb-6">
+                    <h3 class="font-black text-slate-800 text-[15px] mb-3">ประวัติความเคลื่อนไหว</h3>
+                    <div class="flex flex-col gap-3" id="transactions-container">
+                        <!-- Filled by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ───────────────────────────────────────────────────────────── -->
+        <!-- VIEW D: ACCOUNT PROFILE VIEW (บัญชี) -->
+        <!-- ───────────────────────────────────────────────────────────── -->
+        <div id="view-account" class="view-section hidden">
+            <header class="bg-partner px-6 pt-6 pb-6 rounded-b-[32px] text-white shadow-md">
+                <h1 class="font-black text-[20px] text-white">ข้อมูลส่วนตัวและโปรไฟล์</h1>
+                <p class="text-[12px] text-white/70">ตรวจสอบข้อมูลการประเมินทักษะและเสียงตอบรับจากลูกค้า</p>
+            </header>
+
+            <div class="px-6 mt-6">
+                <!-- User card -->
+                <div class="bg-white rounded-3xl p-5 border border-slate-100 shadow-premium mb-6 flex items-center gap-4">
+                    <img id="profile-picture-full" src="https://ui-avatars.com/api/?name=Maid&background=eff6ff&color=1e40af" class="w-16 h-16 rounded-2xl object-cover border-2 border-slate-100" alt="Avatar">
+                    <div>
+                        <h2 class="font-black text-[16px] text-slate-800" id="profile-name-full">คุณสมศรี ใจดี</h2>
+                        <p class="text-[12px] text-slate-400 font-medium" id="profile-phone-full">โทร: 081-234-5678</p>
+                        <div class="flex gap-2 mt-1.5">
+                            <span class="bg-partner-surface text-partner text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider">MaidBooking</span>
+                            <span class="bg-emerald-50 text-emerald-600 text-[9px] font-black px-2 py-0.5 rounded-full">ยืนยันตัวตนแล้ว</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Level / Tier progression matrix -->
+                <div class="bg-white rounded-3xl p-5 border border-slate-100 shadow-premium mb-6">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">ระดับของคุณ</span>
+                        <span class="text-[13px] font-black text-partner" id="profile-tier-text">ELITE PRO</span>
+                    </div>
+                    <div class="w-full bg-slate-100 h-2.5 rounded-full mb-3 overflow-hidden">
+                        <div class="bg-partner h-full rounded-full transition-all duration-500" style="width: 75%"></div>
                     </div>
                     <div class="flex justify-between text-[10px] font-bold text-slate-400 uppercase">
-                        <span>Go</span>
-                        <span>Arrive</span>
-                        <span>Start</span>
-                        <span>Done</span>
+                        <span>PRO (100)</span>
+                        <span class="text-partner" id="profile-tier-remain">อีก 18 งานจะเลื่อนเป็น MASTER</span>
+                        <span>MASTER (500)</span>
                     </div>
+                </div>
 
-                    <button id="status-btn" class="w-full bg-white text-slate-900 font-black text-[14px] py-4 rounded-xl mt-6 btn-press" onclick="nextStatus()">
-                        I have Arrived
-                    </button>
-                </div>
-            </div>
-        </section>
-        
-        <!-- Skill Matrix -->
-        <section class="px-6 mt-8 mb-6">
-            <h3 class="font-bold text-slate-800 text-[16px] mb-4">Skill Matrix</h3>
-            <div class="bg-white rounded-[20px] p-5 shadow-card border border-slate-100 flex flex-col gap-3">
-                <!-- Skill -->
-                <div>
-                    <div class="flex justify-between items-center mb-1">
-                        <span class="text-[13px] font-bold text-slate-800">Cleaning</span>
-                        <span class="text-[12px] font-black text-partner">Level 5</span>
-                    </div>
-                    <div class="w-full bg-slate-100 rounded-full h-2">
-                        <div class="bg-partner h-2 rounded-full" style="width: 100%"></div>
+                <!-- Skill matrix -->
+                <div class="bg-white rounded-3xl p-5 border border-slate-100 shadow-premium mb-6">
+                    <h3 class="font-black text-slate-800 text-[15px] mb-4">ระดับทักษะความชำนาญ (Skill Matrix)</h3>
+                    
+                    <div class="flex flex-col gap-4" id="account-skills-list">
+                        <!-- Skills will be rendered here dynamically -->
                     </div>
                 </div>
-                <!-- Skill -->
-                <div>
-                    <div class="flex justify-between items-center mb-1">
-                        <span class="text-[13px] font-bold text-slate-800">Ironing</span>
-                        <span class="text-[12px] font-black text-partner">Level 3</span>
-                    </div>
-                    <div class="w-full bg-slate-100 rounded-full h-2">
-                        <div class="bg-partner h-2 rounded-full" style="width: 60%"></div>
-                    </div>
-                </div>
-                <!-- Skill -->
-                <div>
-                    <div class="flex justify-between items-center mb-1">
-                        <span class="text-[13px] font-bold text-slate-800">Cooking</span>
-                        <span class="text-[12px] font-bold text-slate-400">Not Certified</span>
-                    </div>
-                    <div class="w-full bg-slate-100 rounded-full h-2">
-                        <div class="bg-slate-300 h-2 rounded-full" style="width: 0%"></div>
+
+                <!-- Customer reviews -->
+                <div class="mb-6">
+                    <h3 class="font-black text-slate-800 text-[15px] mb-3">คำชื่นชมและรีวิวจากลูกค้า</h3>
+                    <div class="flex flex-col gap-3" id="profile-reviews-container">
+                        <!-- Filled dynamically -->
                     </div>
                 </div>
             </div>
-        </section>
+        </div>
 
     </div>
 
-    <!-- Navigation -->
-    <nav class="fixed bottom-0 w-full max-w-[430px] bg-white border-t border-slate-100 px-6 py-4 flex justify-between items-center pb-[calc(1rem+env(safe-area-inset-bottom))] z-20">
-        <div class="flex flex-col items-center gap-1 text-partner cursor-pointer">
+    <!-- 4. Global Navigation Menu Bar -->
+    <nav class="fixed bottom-0 w-full max-w-[430px] bg-white border-t border-slate-100 px-6 py-3 flex justify-between items-center pb-[calc(0.75rem+env(safe-area-inset-bottom))] z-30 shadow-sheet">
+        <button onclick="switchView('jobs')" id="nav-jobs" class="flex flex-col items-center gap-1 text-partner cursor-pointer flex-1">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
-            <span class="text-[10px] font-bold">Jobs</span>
-        </div>
-        <div class="flex flex-col items-center gap-1 text-slate-400 cursor-pointer" onclick="showToast('Schedule management coming soon', 'info')">
+            <span class="text-[10px] font-black">งานใหม่</span>
+        </button>
+        <button onclick="switchView('schedule')" id="nav-schedule" class="flex flex-col items-center gap-1 text-slate-400 cursor-pointer flex-1">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-            <span class="text-[10px] font-bold">Schedule</span>
-        </div>
-        <div class="flex flex-col items-center gap-1 text-slate-400 cursor-pointer" onclick="showToast('Earnings dashboard coming soon', 'info')">
+            <span class="text-[10px] font-black">ตารางงาน</span>
+        </button>
+        <button onclick="switchView('earnings')" id="nav-earnings" class="flex flex-col items-center gap-1 text-slate-400 cursor-pointer flex-1">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
-            <span class="text-[10px] font-bold">Earnings</span>
-        </div>
-        <div class="flex flex-col items-center gap-1 text-slate-400 cursor-pointer" onclick="showToast('Partner settings coming soon', 'info')">
+            <span class="text-[10px] font-black">รายได้</span>
+        </button>
+        <button onclick="switchView('account')" id="nav-account" class="flex flex-col items-center gap-1 text-slate-400 cursor-pointer flex-1">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-            <span class="text-[10px] font-bold">Account</span>
-        </div>
+            <span class="text-[10px] font-black">บัญชี</span>
+        </button>
     </nav>
+
 </div>
 
-<script src="/static/maid/js/maid_app.js"></script>
+<!-- 5. Job Details Slide-up Sheet -->
+<div id="sheet-overlay" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 hidden transition-opacity duration-300" onclick="closeJobDetailSheet()"></div>
+<div id="job-detail-sheet" class="fixed inset-x-0 bottom-0 bg-white rounded-t-[32px] shadow-sheet border-t border-slate-100 z-50 transform translate-y-full transition-transform duration-300 max-w-[430px] mx-auto pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+    <!-- Pull Bar -->
+    <div class="w-12 h-1.5 bg-slate-200 rounded-full mx-auto my-4 cursor-pointer" onclick="closeJobDetailSheet()"></div>
+    
+    <div class="px-6 overflow-y-auto max-h-[75vh]" id="job-detail-content">
+        <!-- Content gets rendered in JS -->
+    </div>
+</div>
+
+<!-- 6. Withdraw Funds Dialog Modal -->
+<div id="withdraw-modal" class="fixed inset-0 z-50 flex items-center justify-center hidden px-6">
+    <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeWithdrawModal()"></div>
+    <div class="bg-white rounded-3xl w-full max-w-[360px] p-6 shadow-2xl relative z-10 animate-fade-in pop-in">
+        <h3 class="font-black text-slate-800 text-[16px] mb-2">ถอนเงินเข้าบัญชีธนาคาร</h3>
+        <p class="text-xs text-slate-400 mb-4">เงินจะโอนเข้าบัญชี PromptPay หรือธนาคารที่ผูกไว้ในระบบภายใน 24 ชม.</p>
+        
+        <div class="space-y-4">
+            <!-- Amount Input -->
+            <div>
+                <label class="block text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-1">จำนวนเงินที่ต้องการถอน (บาท)</label>
+                <div class="relative">
+                    <span class="absolute left-4 top-3.5 font-bold text-slate-400">฿</span>
+                    <input type="number" id="withdraw-amount-input" class="w-full bg-slate-50 border border-slate-100 focus:border-partner/30 focus:outline-none py-3.5 pl-8 pr-4 font-black rounded-xl text-[16px]" placeholder="ระบุจำนวนเงิน" min="100">
+                </div>
+                <div class="flex justify-between text-[10px] text-slate-400 mt-1">
+                    <span>ถอนขั้นต่ำ 100 บาท</span>
+                    <span onclick="setMaxWithdraw()" class="text-partner font-bold cursor-pointer">ถอนทั้งหมด (฿<span id="max-withdraw-label">2,450</span>)</span>
+                </div>
+            </div>
+
+            <!-- Bank Selector -->
+            <div>
+                <label class="block text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-1">เลือกธนาคารผู้รับเงิน</label>
+                <select id="withdraw-bank-select" class="w-full bg-slate-50 border border-slate-100 focus:border-partner/30 focus:outline-none py-3.5 px-4 font-bold rounded-xl text-xs text-slate-800">
+                    <option value="PromptPay (081-234-5678)">PromptPay (081-234-5678)</option>
+                    <option value="ธนาคารกสิกรไทย (KBANK)">ธนาคารกสิกรไทย (KBANK)</option>
+                    <option value="ธนาคารไทยพาณิชย์ (SCB)">ธนาคารไทยพาณิชย์ (SCB)</option>
+                    <option value="ธนาคารกรุงเทพ (BBL)">ธนาคารกรุงเทพ (BBL)</option>
+                </select>
+            </div>
+
+            <div class="flex gap-3 pt-2">
+                <button onclick="closeWithdrawModal()" class="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs py-3 rounded-xl transition-all btn-press">
+                    ยกเลิก
+                </button>
+                <button onclick="submitWithdraw()" class="flex-1 bg-partner text-white font-black text-xs py-3 rounded-xl shadow btn-press">
+                    ยืนยันการถอนเงิน
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 7. Job Completed Success Confetti Overlay -->
+<div id="success-overlay" class="fixed inset-0 z-50 flex items-center justify-center bg-partner-dark/95 hidden">
+    <div class="text-center p-8 max-w-[340px]">
+        <!-- Circle Check -->
+        <div class="w-20 h-20 bg-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-emerald-500/30 animate-bounce">
+            <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" stroke-width="3.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
+        </div>
+        <h2 class="text-[24px] font-black text-white mb-2">ส่งมอบงานเรียบร้อย!</h2>
+        <p class="text-[13px] text-white/70 leading-relaxed mb-8">งานเสร็จสิ้นอย่างเป็นทางการ ยอดเงินและคะแนนสะสมจะถูกโอนเข้ากระเป๋าของคุณทันที</p>
+        
+        <!-- Reward breakdown -->
+        <div class="bg-white/10 rounded-2xl p-4 border border-white/10 text-left mb-8 space-y-2.5">
+            <div class="flex justify-between items-center text-xs text-white/80">
+                <span>ค่าบริการที่ได้รับ:</span>
+                <span class="font-black text-sm text-emerald-400" id="success-reward-payout">+฿550.00</span>
+            </div>
+            <div class="flex justify-between items-center text-xs text-white/80 border-t border-white/10 pt-2.5">
+                <span>แต้มสะสมส่วนแบ่ง:</span>
+                <span class="font-black text-sm text-amber-400">+50 แต้ม</span>
+            </div>
+        </div>
+
+        <button onclick="dismissSuccessOverlay()" class="w-full bg-white text-partner font-black text-[14px] py-4 rounded-xl shadow btn-press">
+            กลับไปรับงานต่อ
+        </button>
+    </div>
+</div>
+
+<script src="/static/maid/js/maid_app.js?v=1.1.2"></script>
 </body>
 </html>
