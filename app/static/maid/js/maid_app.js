@@ -22,6 +22,7 @@ let activeJobFilter = 'ALL';
 let autoAcceptInterval = null;
 let jobTimerInterval = null;
 let jobTimerSeconds = 0;
+let vacationMode = localStorage.getItem('momo_vacation_mode') === 'true';
 
 // Quiz State
 let quizCurrentStep = 0;
@@ -1079,6 +1080,12 @@ function updateScheduleUI() {
     const container = document.getElementById('schedule-days-list');
     if (!container) return;
     
+    // Sync toggle checkbox
+    const vacToggle = document.getElementById('vacation-toggle');
+    if (vacToggle) {
+        vacToggle.checked = vacationMode;
+    }
+    
     const schedule = JSON.parse(localStorage.getItem('momo_schedule') || '{}');
     const dayNamesTH = {
         monday: 'จันทร์',
@@ -1163,6 +1170,7 @@ window.toggleScheduleSlot = function(day, slot) {
 
 window.toggleVacationMode = function(checkbox) {
     vacationMode = checkbox.checked;
+    localStorage.setItem('momo_vacation_mode', vacationMode);
     showToast(vacationMode ? "เปิดโหมดพักร้อน ปิดรับคิวงานทั้งหมดชั่วคราว" : "ปิดโหมดพักร้อน เปิดให้บริการตามตารางปกติ", "info");
     updateScheduleUI();
 };
