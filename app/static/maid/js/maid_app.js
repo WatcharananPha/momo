@@ -375,8 +375,19 @@ async function fetchPendingJobs() {
         
         if (res.ok) {
             const jobs = await res.json();
+            
+            // Filter to only include mock bookings for this presentation
+            const mockOnly = jobs.filter(j => j.reference_code && j.reference_code.startsWith("REF-MOCK-"));
+            
+            // Sort by mock number (1, 2, 3, 4)
+            mockOnly.sort((a, b) => {
+                const numA = parseInt(a.reference_code.split('-')[2]) || 0;
+                const numB = parseInt(b.reference_code.split('-')[2]) || 0;
+                return numA - numB;
+            });
+
             // enhance backend jobs with distance / details for mockup richness
-            const enhanced = jobs.map((j, index) => {
+            const enhanced = mockOnly.map((j, index) => {
                 let mockRef = null;
                 if (j.reference_code === "REF-MOCK-1") mockRef = mockJobs[0];
                 else if (j.reference_code === "REF-MOCK-2") mockRef = mockJobs[1];
@@ -424,7 +435,7 @@ async function fetchPendingJobs() {
                 };
             });
             
-            // Merge mockJobs for mockup fullness if backend returns empty
+            // Merge mockJobs for mockup fullness if backend returns empty or if enhanced yields 0 mock bookings
             if (enhanced.length === 0) {
                 renderJobs(mockJobs);
             } else {
