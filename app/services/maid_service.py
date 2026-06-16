@@ -81,7 +81,11 @@ class MaidService:
                     "credit_cost": job.creditCost,
                     "customer_name": job.user.displayName,
                     "customer_tags": [t.tag for t in tags],
-                    "membership_tier": job.user.membership.tier if job.user.membership else "SILVER"
+                    "membership_tier": job.user.membership.tier if job.user.membership else "SILVER",
+                    "reference_code": job.referenceCode,
+                    "scheduled_at": job.scheduledAt.isoformat(),
+                    "customer_lat": job.customerLat,
+                    "customer_lng": job.customerLng
                 })
         return eligible_jobs
 

@@ -2,7 +2,13 @@ import requests
 import time
 import json
 
-BASE_URL = "http://127.0.0.1:8001/api/v1"
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+PORT = os.getenv("PORT", "9090")
+BASE_URL = f"http://127.0.0.1:{PORT}/api/v1"
 
 def test_full_backend_flow():
     print("🚀 Starting Comprehensive Backend Test...")

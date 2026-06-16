@@ -377,6 +377,33 @@ async function fetchPendingJobs() {
             const jobs = await res.json();
             // enhance backend jobs with distance / details for mockup richness
             const enhanced = jobs.map((j, index) => {
+                let mockRef = null;
+                if (j.reference_code === "REF-MOCK-1") mockRef = mockJobs[0];
+                else if (j.reference_code === "REF-MOCK-2") mockRef = mockJobs[1];
+                else if (j.reference_code === "REF-MOCK-3") mockRef = mockJobs[2];
+                else if (j.reference_code === "REF-MOCK-4") mockRef = mockJobs[3];
+                
+                if (mockRef) {
+                    return {
+                        id: j.id,
+                        type: j.type,
+                        typeName: mockRef.typeName,
+                        location_name: j.location_name || mockRef.location_name,
+                        location_desc: j.notes || mockRef.location_desc,
+                        party_size: j.party_size || mockRef.party_size,
+                        notes: j.notes || mockRef.notes,
+                        credit_cost: j.credit_cost || mockRef.credit_cost,
+                        customer_name: j.customer_name || mockRef.customer_name,
+                        customer_tags: j.customer_tags || mockRef.customer_tags,
+                        membership_tier: j.membership_tier || mockRef.membership_tier,
+                        scheduled_at: mockRef.scheduled_at,
+                        distance: mockRef.distance,
+                        customer_rating: mockRef.customer_rating,
+                        customer_lat: j.customer_lat || mockRef.customer_lat,
+                        customer_lng: j.customer_lng || mockRef.customer_lng
+                    };
+                }
+                
                 return {
                     id: j.id,
                     type: j.type,
@@ -390,10 +417,10 @@ async function fetchPendingJobs() {
                     customer_tags: j.customer_tags || ["No Pets"],
                     membership_tier: j.membership_tier || "SILVER",
                     scheduled_at: "วันนี้, " + (14 + index) + ":00 - " + (16 + index) + ":00 น.",
-                    distance: (1.5 + index).toFixed(1) + " กม.",
+                    distance: j.distance || ((1.5 + index).toFixed(1) + " กม."),
                     customer_rating: 4.8,
-                    customer_lat: 13.7563 + (index * 0.01),
-                    customer_lng: 100.5018 + (index * 0.01)
+                    customer_lat: j.customer_lat || (13.7563 + (index * 0.01)),
+                    customer_lng: j.customer_lng || (100.5018 + (index * 0.01))
                 };
             });
             
@@ -415,9 +442,9 @@ async function fetchPendingJobs() {
 function translateType(type) {
     const map = {
         'GENERAL_CLEANING': 'ทำความสะอาดทั่วไป',
-        'DEEP_CLEANING': 'ทำความสะอาดใหญ่ (Deep)',
-        'IRONING': 'รีดผ้าและจัดเสื้อผ้า',
-        'COOKING': 'จัดเตรียมและทำอาหาร',
+        'DEEP_CLEANING': 'ทำความสะอาดบิ๊กคลีนนิ่ง (Deep Clean)',
+        'IRONING': 'รีดผ้าและจัดระเบียบ',
+        'COOKING': 'เตรียมวัตถุดิบและทำอาหาร',
         'LAUNDRY': 'ซักอบรีดพรีเมียม'
     };
     return map[type] || type;

@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from app.core.database import db
-from prisma.enums import MaidTier, MaidStatus, BookingType, MembershipTier
+from prisma.enums import MaidTier, MaidStatus, BookingType, MembershipTier, BookingStatus
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -183,6 +183,136 @@ async def seed_point_rules():
         else:
             logger.info(f"Point rule {rule['ruleName']} already exists, skipping.")
 
+async def seed_bookings():
+    logger.info("Seeding Mock Bookings...")
+    mock_customers = [
+        {
+            "name": "คุณณิชาภา (Nichapa)",
+            "tier": MembershipTier.GOLD,
+            "tags": ["No Pets (In bedroom)", "Friendly", "Provide Tools"],
+            "booking": {
+                "type": BookingType.GENERAL_CLEANING,
+                "scheduledAt": datetime.utcnow() + timedelta(hours=2),
+                "locationName": "Ideo Mobi สุขุมวิท 81 (BTS อ่อนนุช)",
+                "partySize": 2,
+                "notes": "เช็ดฝุ่น กวาด ถูห้องขนาด 32 ตร.ม. และล้างระเบียงภายนอก ห้องนอนมีฝุ่นเยอะหน่อย มีแมว 1 ตัว (เชื่องมาก)",
+                "creditCost": 550,
+                "referenceCode": "REF-MOCK-1",
+                "customerLat": 13.7055,
+                "customerLng": 100.6015
+            }
+        },
+        {
+            "name": "คุณวิทวัส (Witawat)",
+            "tier": MembershipTier.PLATINUM,
+            "tags": ["Cats in house", "Provide Tools", "Vaccinated Only"],
+            "booking": {
+                "type": BookingType.DEEP_CLEANING,
+                "scheduledAt": datetime.utcnow() + timedelta(days=1),
+                "locationName": "บ้านเดี่ยว แสนสิริ พัฒนาการ",
+                "partySize": 5,
+                "notes": "ต้องการล้างตู้เย็นภายนอก-ใน เช็ดกระจกขอบสูงทุกจุด และล้างลานจอดรถ มีเครื่องดูดฝุ่นและน้ำยาให้ครบถ้วน",
+                "creditCost": 1550,
+                "referenceCode": "REF-MOCK-2",
+                "customerLat": 13.7381,
+                "customerLng": 100.6322
+            }
+        },
+        {
+            "name": "คุณจรรยา (Janya)",
+            "tier": MembershipTier.SILVER,
+            "tags": ["No Pets", "Bring Spray"],
+            "booking": {
+                "type": BookingType.IRONING,
+                "scheduledAt": datetime.utcnow() + timedelta(days=1, hours=4),
+                "locationName": "Lumpini Suite ดินแดง-ราชปรารภ",
+                "partySize": 3,
+                "notes": "รีดเสื้อเชิ้ตทำงาน 15 ตัว กางเกงสแล็ค 5 ตัว พับเก็บในตู้ให้เรียบร้อย ขอสเปรย์ฉีดผ้าหอมกลิ่นธรรมชาติติดตัวมาด้วยนะคะ",
+                "creditCost": 750,
+                "referenceCode": "REF-MOCK-3",
+                "customerLat": 13.7545,
+                "customerLng": 100.5422
+            }
+        },
+        {
+            "name": "คุณปกรณ์ (Pakorn)",
+            "tier": MembershipTier.DIAMOND,
+            "tags": ["Ingredients Ready", "High Rating"],
+            "booking": {
+                "type": BookingType.COOKING,
+                "scheduledAt": datetime.utcnow() + timedelta(days=2),
+                "locationName": "Noble Red อารีย์ (ซอย 1)",
+                "partySize": 3,
+                "notes": "ช่วยทำกับข้าว 3 เมนู: แกงส้มชะอมไข่ กะเพราไก่สับ และต้มจืดเต้าหู้ไข่ วัตถุดิบซื้อเตรียมไว้ให้ในตู้เย็นแล้วค่ะ",
+                "creditCost": 900,
+                "referenceCode": "REF-MOCK-4",
+                "customerLat": 13.7795,
+                "customerLng": 100.5445
+            }
+        }
+    ]
+
+    for cust in mock_customers:
+        # Create user
+        user = await db.user.find_first(where={"displayName": cust["name"]})
+        if not user:
+            user = await db.user.create(data={
+                "displayName": cust["name"],
+                "isGuest": False
+            })
+            logger.info(f"Created customer user: {cust['name']}")
+        
+        # Create membership
+        membership = await db.membership.find_first(where={"userId": user.id})
+        if not membership:
+            await db.membership.create(data={
+                "userId": user.id,
+                "tier": cust["tier"]
+            })
+            logger.info(f"Created membership {cust['tier']} for user {cust['name']}")
+        
+        # Create tags
+        for t in cust["tags"]:
+            tag_existing = await db.customertag.find_first(where={
+                "userId": user.id,
+                "tag": t
+            })
+            if not tag_existing:
+                await db.customertag.create(data={
+                    "userId": user.id,
+                    "tag": t
+                })
+                logger.info(f"Added tag {t} to user {cust['name']}")
+
+        # Create booking
+        b_data = cust["booking"]
+        b_existing = await db.booking.find_first(where={"referenceCode": b_data["referenceCode"]})
+        if not b_existing:
+            await db.booking.create(data={
+                "userId": user.id,
+                "type": b_data["type"],
+                "status": BookingStatus.AUTO_MATCHING,
+                "scheduledAt": b_data["scheduledAt"],
+                "locationName": b_data["locationName"],
+                "partySize": b_data["partySize"],
+                "notes": b_data["notes"],
+                "creditCost": b_data["creditCost"],
+                "referenceCode": b_data["referenceCode"],
+                "customerLat": b_data["customerLat"],
+                "customerLng": b_data["customerLng"]
+            })
+            logger.info(f"Created mock booking {b_data['referenceCode']} ({b_data['type']})")
+        else:
+            # Update scheduledAt just to make sure it's relative to current time on seed retry
+            await db.booking.update(
+                where={"id": b_existing.id},
+                data={
+                    "status": BookingStatus.AUTO_MATCHING,
+                    "scheduledAt": b_data["scheduledAt"]
+                }
+            )
+            logger.info(f"Mock booking {b_data['referenceCode']} already exists, updated schedule.")
+
 async def main():
     await db.connect()
     try:
@@ -190,6 +320,7 @@ async def main():
         await seed_maids()
         await seed_campaigns()
         await seed_point_rules()
+        await seed_bookings()
         logger.info("Seeding complete! 🌱")
     except Exception as e:
         logger.error(f"Seeding failed: {e}")
